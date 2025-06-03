@@ -156,21 +156,20 @@
         
         .equipment-buttons {
             display: grid;
-            
             gap: 8px;
         }
         
         .equipment-button {
-            
-            padding: 12px 16px;
+            padding: 8px 12px;
             border: 2px solid;
-            border-radius: 6px;
+            border-radius: 4px;
             background: white;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s;
             text-align: center;
-            font-size: 14px;
+            font-size: 12px;
+            min-width: 60px;
         }
         
         .equipment-button:hover {
@@ -179,22 +178,21 @@
         }
         
         .equipment-button.active {
-            
             background-color: rgba(0,0,0,0.1);
             transform: translateY(-1px);
             box-shadow: 0 3px 6px rgba(0,0,0,0.2);
         }
         
         .reset-button {
-            /* margin-top: 15px; */
             background: #dc3545;
             color: white;
             border: 2px solid #dc3545;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 8px 12px;
+            border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s;
+            font-size: 12px;
         }
         
         .reset-button:hover {
@@ -365,6 +363,12 @@
             margin: 20px;
         }
 
+        .equipment-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .equipment-buttons-row{
             display: flex;
             justify-content: center;
@@ -374,16 +378,41 @@
             flex-wrap: wrap;
         }
         
+        /* 데이터 정보 패널 */
+        .data-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .data-info h4 {
+            margin: 0 0 10px 0;
+            color: #0066cc;
+            font-size: 16px;
+        }
+        
+        .data-info p {
+            margin: 5px 0;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .data-count {
+            font-weight: bold;
+            color: #0066cc;
+        }
+        
         /* 반응형 디자인 */
         @media (max-width: 1200px) {
             .equipment-buttons-row {
                 gap: 10px;
-                
             }
             
             .equipment-buttons-row .equipment-button,
             .equipment-buttons-row .reset-button {
-                
                 min-width: 100px;
                 font-size: 13px;
             }
@@ -396,13 +425,10 @@
             }
             
             .filter-group {
-                /* width: 100%; */
                 justify-content: center;
             }
             
             .equipment-buttons-row {
-                
-                /* flex-direction: column; */
                 gap: 8px;
             }
             
@@ -455,21 +481,28 @@
                         <option value="500" selected>500개</option>
                         <option value="800">800개</option>
                         <option value="1000">1000개</option>
-                        <option value="all">전체 (최대 1500개)</option>
+                        <option value="2000">2000개</option>
+                        <option value="5000">5000개</option>
+                        <option value="10000">10000개</option>
+                        <option value="all">전체 데이터</option>
                     </select>
                 </div>
+                
+                <div class="filter-group">
+                    <label>장비:</label>
+                    <div class="equipment-row">
+                        <button class="equipment-button" data-equipment="all" style="border-color: #333; color: #333;">All</button>
+                        <button class="equipment-button" data-equipment="Raw" style="border-color: #2196f3; color: #2196f3;">Raw</button>
+                        <button class="equipment-button" data-equipment="Wraps" style="border-color: #4caf50; color: #4caf50;">Wraps</button>
+                        <button class="equipment-button" data-equipment="Single-ply" style="border-color: #ff9800; color: #ff9800;">Single-ply</button>
+                        <button class="equipment-button" data-equipment="Multi-ply" style="border-color: #9c27b0; color: #9c27b0;">Multi-ply</button>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <button class="reset-button" id="reset-btn">필터 초기화</button>
+                </div>
             </div>
-            
-            <!-- 장비 필터 (타이틀 아래로 이동) -->
-            <div class="equipment-buttons-row">
-                <button class="equipment-button" data-equipment="all" style="border-color: #333; color: #333;">All</button>
-                <button class="equipment-button" data-equipment="Raw" style="border-color: #2196f3; color: #2196f3;">Raw</button>
-                <button class="equipment-button" data-equipment="Wraps" style="border-color: #4caf50; color: #4caf50;">Wraps</button>
-                <button class="equipment-button" data-equipment="Single-ply" style="border-color: #ff9800; color: #ff9800;">Single-ply</button>
-                <button class="equipment-button" data-equipment="Multi-ply" style="border-color: #9c27b0; color: #9c27b0;">Multi-ply</button>
-                <button class="reset-button" id="reset-btn">필터 초기화</button>
-            </div>
-            
         </div>
 
         <!-- 로딩/에러 메시지 -->
@@ -478,6 +511,13 @@
         </div>
 
         <div id="error-message" class="error" style="display: none;"></div>
+
+        <!-- 데이터 정보 패널 -->
+        <div class="data-info" id="data-info" style="display: none;">
+            <h4>📊 데이터 정보</h4>
+            <p>전체 데이터: <span class="data-count" id="total-count">0</span>개</p>
+            <p>현재 표시: <span class="data-count" id="current-count">0</span>개</p>
+        </div>
 
         <!-- 메인 컨텐츠 - 차트만 -->
         <div class="main-content" id="main-content" style="display: none;">
@@ -517,6 +557,7 @@
         let filteredData = [];
         let currentEquipmentFilter = 'all';
         let highlightedEquipment = null;
+        let loadStartTime = 0;
         
         // 차트 설정
         const margin = {top: 50, right: 50, bottom: 50, left: 80};
@@ -542,6 +583,8 @@
 
         // CSV 데이터 로드
         function loadData() {
+            loadStartTime = performance.now();
+            
             d3.csv("openpowerlifting_used.csv").then(function(data) {
                 console.log("원본 데이터 로드 완료:", data.length, "개 레코드");
                 
@@ -569,56 +612,37 @@
                     TotalKg: d.TotalKg ? +d.TotalKg : null
                 }));
                 
+                const loadTime = ((performance.now() - loadStartTime) / 1000).toFixed(2);
                 console.log("전처리된 데이터:", originalData.length, "개 레코드");
+                console.log("로딩 시간:", loadTime, "초");
                 
                 if (originalData.length === 0) {
                     showError("유효한 데이터를 찾을 수 없습니다. CSV 파일을 확인해주세요.");
                     return;
                 }
                 
-                // 초기 로드 시 적당한 양만 선택 (성능 최적화)
-                if (originalData.length > 1500) {
-                    // Wilks 점수 기준으로 정렬 후 상위권과 다양한 샘플 혼합
-                    originalData.sort((a, b) => b.Wilks - a.Wilks);
-                    
-                    // 상위 30% + 각 장비별 균등 샘플링
-                    const topPerformers = originalData.slice(0, Math.min(500, Math.floor(originalData.length * 0.3)));
-                    
-                    // 장비별로 균등하게 샘플링
-                    const equipmentSamples = {};
-                    ['Raw', 'Wraps', 'Single-ply', 'Multi-ply'].forEach(eq => {
-                        const equipmentData = originalData.filter(d => d.Equipment === eq);
-                        if (equipmentData.length > 0) {
-                            const sampleSize = Math.min(250, Math.floor(equipmentData.length * 0.4));
-                            equipmentSamples[eq] = d3.shuffle(equipmentData).slice(0, sampleSize);
-                        }
-                    });
-                    
-                    // 상위 성능자와 장비별 샘플 합치기
-                    const combinedSample = [...topPerformers];
-                    Object.values(equipmentSamples).forEach(samples => {
-                        samples.forEach(sample => {
-                            if (!combinedSample.find(d => d.Name === sample.Name)) {
-                                combinedSample.push(sample);
-                            }
-                        });
-                    });
-                    
-                    // 최종적으로 1500개로 제한
-                    originalData = d3.shuffle(combinedSample).slice(0, 1500);
-                    console.log("초기 샘플링된 데이터:", originalData.length, "개 레코드");
-                }
+                // 데이터 정보 업데이트
+                updateDataInfo(originalData.length, loadTime);
                 
                 filteredData = [...originalData];
                 hideLoading();
                 createParallelCoordinates();
                 setupEventListeners();
-                updateEquipmentStats();
+                filterData(); // 초기 필터링 적용
                 
             }).catch(function(error) {
                 console.error("CSV 로드 오류:", error);
                 showError("CSV 파일을 로드할 수 없습니다. 파일이 같은 폴더에 있는지 확인해주세요.");
             });
+        }
+
+        function updateDataInfo(totalCount, loadTime) {
+            document.getElementById('total-count').textContent = totalCount.toLocaleString();
+            document.getElementById('data-info').style.display = 'block';
+        }
+
+        function updateCurrentCount(currentCount) {
+            document.getElementById('current-count').textContent = currentCount.toLocaleString();
         }
 
         function showError(message) {
@@ -638,25 +662,61 @@
             const selectedSex = document.querySelector('input[name="sex"]:checked').value;
             const sampleSize = document.getElementById('sample-size').value;
             
-            // 성별 필터링
+            console.log("필터링 시작:", {selectedSex, sampleSize, currentEquipmentFilter});
+            
+            // 성별 및 장비 필터링
             let filtered = originalData.filter(d => {
                 return (selectedSex === 'all' || d.Sex === selectedSex) &&
                        (currentEquipmentFilter === 'all' || d.Equipment === currentEquipmentFilter);
             });
             
-            // 샘플링
+            console.log("1차 필터링 후:", filtered.length, "개");
+            
+            // 샘플링 (성능 최적화)
             if (sampleSize !== 'all' && filtered.length > +sampleSize) {
-                // Wilks 점수 기준으로 정렬 후 상위권과 랜덤 샘플 혼합
-                filtered.sort((a, b) => b.Wilks - a.Wilks);
-                const topPerformers = filtered.slice(0, Math.floor(+sampleSize * 0.3));
-                const remaining = filtered.slice(Math.floor(+sampleSize * 0.3));
-                const randomSample = d3.shuffle(remaining).slice(0, +sampleSize - topPerformers.length);
-                filtered = [...topPerformers, ...randomSample];
+                const targetSize = +sampleSize;
+                
+                // 대용량 데이터 처리 최적화
+                if (filtered.length > 50000) {
+                    // 매우 큰 데이터의 경우 계층화 샘플링
+                    console.log("대용량 데이터 계층화 샘플링 적용");
+                    
+                    // Wilks 점수 기준으로 정렬
+                    filtered.sort((a, b) => b.Wilks - a.Wilks);
+                    
+                    // 상위 20% + 중간 60% + 하위 20% 비율로 샘플링
+                    const topCount = Math.floor(targetSize * 0.2);
+                    const middleCount = Math.floor(targetSize * 0.6);
+                    const bottomCount = targetSize - topCount - middleCount;
+                    
+                    const topSample = filtered.slice(0, topCount);
+                    
+                    const middleStart = Math.floor(filtered.length * 0.2);
+                    const middleEnd = Math.floor(filtered.length * 0.8);
+                    const middleData = filtered.slice(middleStart, middleEnd);
+                    const middleSample = d3.shuffle(middleData).slice(0, middleCount);
+                    
+                    const bottomStart = Math.floor(filtered.length * 0.8);
+                    const bottomData = filtered.slice(bottomStart);
+                    const bottomSample = d3.shuffle(bottomData).slice(0, bottomCount);
+                    
+                    filtered = [...topSample, ...middleSample, ...bottomSample];
+                    
+                } else {
+                    // 일반적인 경우 기존 방식 사용
+                    filtered.sort((a, b) => b.Wilks - a.Wilks);
+                    const topPerformers = filtered.slice(0, Math.floor(targetSize * 0.3));
+                    const remaining = filtered.slice(Math.floor(targetSize * 0.3));
+                    const randomSample = d3.shuffle(remaining).slice(0, targetSize - topPerformers.length);
+                    filtered = [...topPerformers, ...randomSample];
+                }
             }
             
+            console.log("최종 필터링 후:", filtered.length, "개");
+            
             filteredData = filtered;
+            updateCurrentCount(filtered.length);
             updateParallelCoordinates();
-            updateEquipmentStats();
         }
 
         // 평행 좌표 그래프 생성
@@ -719,6 +779,8 @@
         
         // 평행 좌표 업데이트
         function updateParallelCoordinates() {
+            const updateStart = performance.now();
+            
             const svg = d3.select('#parallel-coords-chart svg g');
             const linesGroup = svg.select('.lines-group');
             
@@ -747,55 +809,67 @@
                 }))
             }));
             
+            // 대용량 데이터 처리 최적화
+            const isLargeDataset = lineData.length > 2000;
+            
             // 라인 업데이트
             const lines = linesGroup.selectAll('.line')
-                .data(lineData, d => d.data.Name);
+                .data(lineData, d => d.data.Name + '_' + d.data.Equipment);
             
             lines.exit().remove();
             
-            lines.enter()
+            const enterLines = lines.enter()
                 .append('path')
-                .attr('class', 'line')
-                .merge(lines)
+                .attr('class', 'line');
+            
+            const allLines = enterLines.merge(lines);
+            
+            allLines
                 .attr('d', d => line(d.values))
                 .attr('stroke', d => equipmentColors[d.data.Equipment])
                 .attr('opacity', d => {
-                    if (highlightedEquipment === null) return 0.6;
+                    if (highlightedEquipment === null) return isLargeDataset ? 0.4 : 0.6;
                     return d.data.Equipment === highlightedEquipment ? 0.9 : 0.15;
                 })
                 .attr('stroke-width', d => {
-                    if (highlightedEquipment === null) return 1.5;
+                    if (highlightedEquipment === null) return isLargeDataset ? 1 : 1.5;
                     return d.data.Equipment === highlightedEquipment ? 2.5 : 1;
-                })
-                .on('mouseover', function(event, d) {
-                    showTooltip(event, d.data);
-                    d3.select(this).attr('stroke-width', 3).attr('opacity', 1);
-                })
-                .on('mouseout', function(event, d) {
-                    hideTooltip();
-                    const defaultWidth = highlightedEquipment === null ? 1.5 : 
-                                       (d.data.Equipment === highlightedEquipment ? 2.5 : 1);
-                    const defaultOpacity = highlightedEquipment === null ? 0.6 :
-                                         (d.data.Equipment === highlightedEquipment ? 0.9 : 0.15);
-                    d3.select(this).attr('stroke-width', defaultWidth).attr('opacity', defaultOpacity);
                 });
-        }
-        
-        // 장비별 통계 업데이트 - 제거된 함수
-        function updateEquipmentStats() {
-            // 통계 패널이 제거되었으므로 이 함수는 비활성화
-            return;
-        }
-        
-        function getEquipmentIcon(equipment) {
-            // 이모지 제거 - 필요 없음
-            return '';
-        }
-        
-        function hexToRgb(hex) {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            if (!result) return '0,0,0';
-            return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
+            
+            // 대용량 데이터일 때는 호버 이벤트 최적화
+            if (!isLargeDataset) {
+                allLines
+                    .on('mouseover', function(event, d) {
+                        showTooltip(event, d.data);
+                        d3.select(this).attr('stroke-width', 3).attr('opacity', 1);
+                    })
+                    .on('mouseout', function(event, d) {
+                        hideTooltip();
+                        const defaultWidth = highlightedEquipment === null ? 1.5 : 
+                                           (d.data.Equipment === highlightedEquipment ? 2.5 : 1);
+                        const defaultOpacity = highlightedEquipment === null ? 0.6 :
+                                             (d.data.Equipment === highlightedEquipment ? 0.9 : 0.15);
+                        d3.select(this).attr('stroke-width', defaultWidth).attr('opacity', defaultOpacity);
+                    });
+            } else {
+                // 대용량 데이터일 때는 샘플링된 라인에만 호버 적용
+                allLines.filter((d, i) => i % Math.ceil(lineData.length / 500) === 0)
+                    .on('mouseover', function(event, d) {
+                        showTooltip(event, d.data);
+                        d3.select(this).attr('stroke-width', 3).attr('opacity', 1);
+                    })
+                    .on('mouseout', function(event, d) {
+                        hideTooltip();
+                        const defaultWidth = highlightedEquipment === null ? 1 : 
+                                           (d.data.Equipment === highlightedEquipment ? 2.5 : 1);
+                        const defaultOpacity = highlightedEquipment === null ? 0.4 :
+                                             (d.data.Equipment === highlightedEquipment ? 0.9 : 0.15);
+                        d3.select(this).attr('stroke-width', defaultWidth).attr('opacity', defaultOpacity);
+                    });
+            }
+            
+            const updateTime = ((performance.now() - updateStart) / 1000).toFixed(3);
+            console.log(`차트 업데이트 완료: ${lineData.length}개 라인, ${updateTime}초`);
         }
         
         // 툴팁 표시
@@ -899,7 +973,14 @@
             });
             
             // 샘플 크기
-            document.getElementById('sample-size').addEventListener('change', filterData);
+            document.getElementById('sample-size').addEventListener('change', function() {
+                const sampleSize = this.value;
+                console.log("샘플 크기 변경:", sampleSize);
+                
+                
+                
+                filterData();
+            });
             
             // 초기화 버튼
             document.getElementById('reset-btn').addEventListener('click', function() {
