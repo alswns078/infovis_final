@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 3: 시간에 따른 리프팅 기록 변화 분석</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        /* 헤더 영역 */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        /* 필터 영역 */
+        .filters-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .filters-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .filter-group label {
+            font-weight: bold;
+            color: #495057;
+            margin: 0;
+            min-width: 60px;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .radio-item input[type="radio"] {
+            margin: 0;
+        }
+        
+        .radio-item label {
+            font-weight: normal;
+            margin: 0;
+            cursor: pointer;
+            min-width: auto;
+        }
+        
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            min-width: 120px;
+        }
+        
+        /* 시간 슬라이더 */
+        .time-slider-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            max-width: 600px;
+        }
+        
+        .time-slider-container h4 {
+            margin: 0 0 15px 0;
+            text-align: center;
+            color: #495057;
+        }
+        
+        .slider-wrapper {
+            position: relative;
+            margin: 20px 0;
+        }
+        
+        .time-range-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        .time-range-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .time-range-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .current-range {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        /* 메인 컨텐츠 영역 */
+        .main-content {
+            padding: 30px;
+            background: white;
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #495057;
+        }
+        
+        .chart-title h3 {
+            margin: 0 0 10px 0;
+            font-size: 22px;
+        }
+        
+        .chart-title p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        /* 차트 컨테이너 */
+        .chart-container {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #area-chart {
+            width: 100%;
+            text-align: center;
+        }
+        
+        /* 차트 영역 스타일 */
+        .area {
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+        
+        .area:hover {
+            opacity: 0.9;
+        }
+        
+        .line {
+            fill: none;
+            stroke-width: 2;
+            transition: stroke-width 0.3s ease;
+        }
+        
+        .line:hover {
+            stroke-width: 3;
+        }
+        
+        .axis {
+            font-size: 12px;
+        }
+        
+        .axis-label {
+            font-size: 14px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+        
+        .grid-line {
+            stroke: #e0e0e0;
+            stroke-dasharray: 3,3;
+            stroke-width: 1;
+        }
+        
+        /* 범례 */
+        .legend {
+            background: white;
+            padding: 20px;
+            margin: 0 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .legend h4 {
+            margin: 0 0 15px 0;
+            text-align: center;
+            color: #495057;
+            font-size: 16px;
+        }
+        
+        .legend-items {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: #f8f9fa;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        
+        .legend-item:hover {
+            background-color: rgba(0,0,0,0.05);
+            transform: translateY(-1px);
+        }
+        
+        .legend-item.active {
+            background-color: rgba(0,0,0,0.15);
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border-radius: 6px;
+        }
+        
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+        
+        /* 툴팁 */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 220px;
+        }
+        
+        /* 로딩 및 에러 상태 */
+        .loading, .error {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 16px;
+        }
+        
+        .loading {
+            color: #6c757d;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            margin: 20px;
+        }
+        
+        .reset-button {
+            background: #dc3545;
+            color: white;
+            border: 2px solid #dc3545;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .reset-button:hover {
+            background: #c82333;
+            border-color: #c82333;
+            transform: translateY(-2px);
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .filters-row {
+                gap: 20px;
+            }
+            
+            .chart-container {
+                padding: 20px;
+                overflow-x: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .filters-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .filter-group {
+                width: 100%;
+                justify-content: center;
+                padding: 12px 16px;
+            }
+            
+            .radio-group {
+                gap: 10px;
+            }
+            
+            .legend-items {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .chart-container {
+                padding: 15px;
+            }
+            
+            .time-slider-container {
+                margin: 0 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .header p {
+                font-size: 14px;
+            }
+            
+            .radio-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>Task 3: 시간에 따른 리프팅 기록 변화 분석</h1>
+            <p>다중 영역 차트를 통한 3대 운동 기록의 시계열 변화 추이 분석</p>
+        </div>
+
+        <!-- 필터 영역 -->
+        <div class="filters-section">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label>성별:</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="sex" value="all" id="sex-all" checked>
+                            <label for="sex-all">전체</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="sex" value="M" id="sex-male">
+                            <label for="sex-male">남성</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="sex" value="F" id="sex-female">
+                            <label for="sex-female">여성</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="equipment-select">장비:</label>
+                    <select id="equipment-select">
+                        <option value="all">전체</option>
+                        <option value="Raw">Raw</option>
+                        <option value="Wraps">Wraps</option>
+                        <option value="Single-ply">Single-ply</option>
+                        <option value="Multi-ply">Multi-ply</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="weightclass-select">체급:</label>
+                    <select id="weightclass-select">
+                        <option value="all">전체</option>
+                        <option value="light">경량급 (75kg 이하)</option>
+                        <option value="middle">중량급 (75-100kg)</option>
+                        <option value="heavy">중량급+ (100kg 이상)</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <button class="reset-button" id="reset-btn">필터 초기화</button>
+                </div>
+            </div>
+            
+            <!-- 시간 범위 슬라이더 -->
+            <div class="time-slider-container">
+                <h4>분석 기간 설정</h4>
+                <div class="slider-wrapper">
+                    <input type="range" id="time-range-start" class="time-range-slider" min="1990" max="2019" value="2000" step="1">
+                    <input type="range" id="time-range-end" class="time-range-slider" min="1990" max="2019" value="2019" step="1" style="margin-top: 10px;">
+                    <div class="slider-labels">
+                        <span>1990</span>
+                        <span>2000</span>
+                        <span>2010</span>
+                        <span>2019</span>
+                    </div>
+                </div>
+                <div class="current-range" id="current-range">
+                    분석 기간: 2000년 ~ 2019년
+                </div>
+            </div>
+        </div>
+
+        <!-- 로딩/에러 메시지 -->
+        <div id="loading" class="loading" style="display: block;">
+            CSV 파일을 로딩 중입니다...
+        </div>
+
+        <div id="error-message" class="error" style="display: none;"></div>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content" id="main-content" style="display: none;">
+            <div class="chart-title">
+                <h3>3대 운동 기록 변화 추이</h3>
+            </div>
+            
+            <div class="chart-container">
+                <div id="area-chart"></div>
+            </div>
+        </div>
+
+        <!-- 범례 -->
+        <div class="legend" id="legend" style="display: none;">
+            <h4>운동 종목별 범례</h4>
+            <div class="legend-items">
+                <div class="legend-item" data-exercise="bench">
+                    <span class="legend-dot" style="background-color: #2ca02c;"></span>
+                    <span>벤치프레스 (Bench Press)</span>
+                </div>
+                <div class="legend-item" data-exercise="deadlift">
+                    <span class="legend-dot" style="background-color: #ff7f0e;"></span>
+                    <span>데드리프트 (Deadlift)</span>
+                </div>
+                <div class="legend-item" data-exercise="squat">
+                    <span class="legend-dot" style="background-color: #1f77b4;"></span>
+                    <span>스쿼트 (Squat)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip" style="display: none;"></div>
+
+    <script>
+        // 전역 변수
+        let originalData = [];
+        let filteredData = [];
+        let processedData = [];
+        let highlightedExercise = null;
+        
+        // 차트 설정
+        const margin = {top: 40, right: 80, bottom: 60, left: 80};
+        const width = 1000 - margin.left - margin.right;
+        const height = 500 - margin.bottom - margin.top;
+        
+        // 색상 설정 (명확한 색상 구분)
+        const exerciseColors = {
+            'squat': '#1f77b4',      // 파란색
+            'bench': '#2ca02c',      // 초록색
+            'deadlift': '#ff7f0e'    // 주황색
+        };
+        
+        const exerciseLabels = {
+            'squat': '스쿼트',
+            'bench': '벤치프레스',
+            'deadlift': '데드리프트'
+        };
+
+        // CSV 데이터 로드
+        function loadData() {
+            d3.csv("openpowerlifting_used.csv").then(function(data) {
+                console.log("원본 데이터 로드 완료:", data.length, "개 레코드");
+                
+                // 데이터 전처리
+                originalData = data.filter(d => {
+                    const date = new Date(d.Date);
+                    const year = date.getFullYear();
+                    
+                    return d.Event === 'SBD' && 
+                           d.Date && !isNaN(date.getTime()) && year >= 1990 && year <= 2019 &&
+                           d.BodyweightKg && !isNaN(+d.BodyweightKg) && +d.BodyweightKg > 0 &&
+                           d.Best3SquatKg && !isNaN(+d.Best3SquatKg) && +d.Best3SquatKg > 0 &&
+                           d.Best3BenchKg && !isNaN(+d.Best3BenchKg) && +d.Best3BenchKg > 0 &&
+                           d.Best3DeadliftKg && !isNaN(+d.Best3DeadliftKg) && +d.Best3DeadliftKg > 0 &&
+                           d.Sex && (d.Sex === 'M' || d.Sex === 'F');
+                }).map(d => {
+                    const date = new Date(d.Date);
+                    return {
+                        Name: d.Name || 'Unknown',
+                        Date: date,
+                        Year: date.getFullYear(),
+                        Sex: d.Sex,
+                        BodyweightKg: +d.BodyweightKg,
+                        Best3SquatKg: +d.Best3SquatKg,
+                        Best3BenchKg: +d.Best3BenchKg,
+                        Best3DeadliftKg: +d.Best3DeadliftKg,
+                        Equipment: d.Equipment || 'Raw',
+                        WeightClassKg: d.WeightClassKg || 'Unknown',
+                        Wilks: d.Wilks ? +d.Wilks : null,
+                        Age: d.Age ? +d.Age : null
+                    };
+                });
+                
+                console.log("전처리된 데이터:", originalData.length, "개 레코드");
+                
+                if (originalData.length === 0) {
+                    showError("유효한 시계열 데이터를 찾을 수 없습니다. CSV 파일을 확인해주세요.");
+                    return;
+                }
+                
+                filteredData = [...originalData];
+                processTimeSeriesData();
+                hideLoading();
+                createAreaChart();
+                setupEventListeners();
+                
+            }).catch(function(error) {
+                console.error("CSV 로드 오류:", error);
+                showError("CSV 파일을 로드할 수 없습니다. 파일이 같은 폴더에 있는지 확인해주세요.");
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-message').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('legend').style.display = 'block';
+        }
+
+        // 데이터 필터링
+        function filterData() {
+            const selectedSex = document.querySelector('input[name="sex"]:checked').value;
+            const selectedEquipment = document.getElementById('equipment-select').value;
+            const selectedWeightClass = document.getElementById('weightclass-select').value;
+            
+            filteredData = originalData.filter(d => {
+                let passFilter = true;
+                
+                // 성별 필터
+                if (selectedSex !== 'all') {
+                    passFilter = passFilter && d.Sex === selectedSex;
+                }
+                
+                // 장비 필터
+                if (selectedEquipment !== 'all') {
+                    passFilter = passFilter && d.Equipment === selectedEquipment;
+                }
+                
+                // 체급 필터
+                if (selectedWeightClass !== 'all') {
+                    const weight = d.BodyweightKg;
+                    switch(selectedWeightClass) {
+                        case 'light':
+                            passFilter = passFilter && weight <= 75;
+                            break;
+                        case 'middle':
+                            passFilter = passFilter && weight > 75 && weight <= 100;
+                            break;
+                        case 'heavy':
+                            passFilter = passFilter && weight > 100;
+                            break;
+                    }
+                }
+                
+                return passFilter;
+            });
+            
+            processTimeSeriesData();
+            updateAreaChart();
+        }
+
+        // 시계열 데이터 처리 (연도별 동일 샘플 수)
+        function processTimeSeriesData() {
+            const startYear = +document.getElementById('time-range-start').value;
+            const endYear = +document.getElementById('time-range-end').value;
+            
+            // 연도별 필터링
+            const yearFilteredData = filteredData.filter(d => 
+                d.Year >= startYear && d.Year <= endYear
+            );
+            
+            // 연도별 그룹화
+            const yearlyGroups = d3.group(yearFilteredData, d => d.Year);
+            
+            // 각 연도별 데이터 수 확인
+            const yearlyCounts = Array.from(yearlyGroups.entries()).map(([year, data]) => ({
+                year: year,
+                count: data.length,
+                data: data
+            }));
+            
+            // 가장 적은 데이터 수를 가진 연도 찾기
+            const minCount = d3.min(yearlyCounts, d => d.count);
+            console.log(`최소 샘플 수: ${minCount}개, 이 수로 모든 연도를 통일합니다.`);
+            
+            processedData = [];
+            
+            yearlyCounts.forEach(({ year, data }) => {
+                if (data.length >= minCount && minCount > 0) {
+                    // 상위 성능자 위주로 샘플링 (Wilks 점수 기준)
+                    const sortedData = data
+                        .filter(d => d.Wilks && d.Wilks > 0)
+                        .sort((a, b) => b.Wilks - a.Wilks);
+                    
+                    // 상위 성능자부터 minCount만큼 선택
+                    const sampledData = sortedData.slice(0, Math.min(minCount, sortedData.length));
+                    
+                    // 샘플 수가 부족한 경우 전체 데이터에서 무작위 선택
+                    if (sampledData.length < minCount) {
+                        const remaining = data.filter(d => !sampledData.includes(d));
+                        const shuffled = d3.shuffle([...remaining]);
+                        sampledData.push(...shuffled.slice(0, minCount - sampledData.length));
+                    }
+                    
+                    if (sampledData.length > 0) {
+                        const avgSquat = d3.mean(sampledData, d => d.Best3SquatKg);
+                        const avgBench = d3.mean(sampledData, d => d.Best3BenchKg);
+                        const avgDeadlift = d3.mean(sampledData, d => d.Best3DeadliftKg);
+                        
+                        processedData.push({
+                            year: year,
+                            squat: avgSquat,
+                            bench: avgBench,
+                            deadlift: avgDeadlift,
+                            count: sampledData.length,
+                            actualCount: data.length
+                        });
+                    }
+                }
+            });
+            
+            // 연도순 정렬
+            processedData.sort((a, b) => a.year - b.year);
+            
+            console.log("처리된 시계열 데이터:", processedData.length, "개 연도");
+            console.log("연도별 균등 샘플 수:", minCount, "개");
+        }
+
+        // 영역 차트 생성
+        function createAreaChart() {
+            // 기존 SVG 제거
+            d3.select('#area-chart').selectAll('*').remove();
+            
+            const svg = d3.select('#area-chart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .style('display', 'block')
+                .style('margin', '0 auto');
+            
+            const g = svg.append('g')
+                .attr('transform', `translate(${margin.left}, ${margin.top})`);
+            
+            // 스케일 설정
+            const xScale = d3.scaleLinear()
+                .domain(d3.extent(processedData, d => d.year))
+                .range([0, width]);
+            
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(processedData, d => Math.max(d.squat, d.bench, d.deadlift)) * 1.1])
+                .range([height, 0]);
+            
+            // 영역 생성기
+            const areaSquat = d3.area()
+                .x(d => xScale(d.year))
+                .y0(height)
+                .y1(d => yScale(d.squat))
+                .curve(d3.curveMonotoneX);
+            
+            const areaBench = d3.area()
+                .x(d => xScale(d.year))
+                .y0(height)
+                .y1(d => yScale(d.bench))
+                .curve(d3.curveMonotoneX);
+            
+            const areaDeadlift = d3.area()
+                .x(d => xScale(d.year))
+                .y0(height)
+                .y1(d => yScale(d.deadlift))
+                .curve(d3.curveMonotoneX);
+            
+            // 선 생성기
+            const lineSquat = d3.line()
+                .x(d => xScale(d.year))
+                .y(d => yScale(d.squat))
+                .curve(d3.curveMonotoneX);
+            
+            const lineBench = d3.line()
+                .x(d => xScale(d.year))
+                .y(d => yScale(d.bench))
+                .curve(d3.curveMonotoneX);
+            
+            const lineDeadlift = d3.line()
+                .x(d => xScale(d.year))
+                .y(d => yScale(d.deadlift))
+                .curve(d3.curveMonotoneX);
+            
+            // 그리드 라인
+            g.selectAll('.grid-line-x')
+                .data(xScale.ticks(10))
+                .enter()
+                .append('line')
+                .attr('class', 'grid-line')
+                .attr('x1', d => xScale(d))
+                .attr('x2', d => xScale(d))
+                .attr('y1', 0)
+                .attr('y2', height);
+            
+            g.selectAll('.grid-line-y')
+                .data(yScale.ticks(8))
+                .enter()
+                .append('line')
+                .attr('class', 'grid-line')
+                .attr('x1', 0)
+                .attr('x2', width)
+                .attr('y1', d => yScale(d))
+                .attr('y2', d => yScale(d));
+            
+            // 영역 추가 (순서: 벤치프레스 → 데드리프트 → 스쿼트)
+           
+             g.append('path')
+                .datum(processedData)
+                .attr('class', 'area squat-area')
+                .attr('d', areaSquat)
+                .attr('fill', exerciseColors.squat)
+                .attr('opacity', 0.3);
+            g.append('path')
+                .datum(processedData)
+                .attr('class', 'area deadlift-area')
+                .attr('d', areaDeadlift)
+                .attr('fill', exerciseColors.deadlift)
+                .attr('opacity', 0.3);
+
+            g.append('path')
+                .datum(processedData)
+                .attr('class', 'area bench-area')
+                .attr('d', areaBench)
+                .attr('fill', exerciseColors.bench)
+                .attr('opacity', 0.3);
+            
+            // 선 추가 (같은 순서)
+            g.append('path')
+                .datum(processedData)
+                .attr('class', 'line bench-line')
+                .attr('d', lineBench)
+                .attr('stroke', exerciseColors.bench)
+                .attr('stroke-width', 2)
+                .attr('fill', 'none');
+            
+            g.append('path')
+                .datum(processedData)
+                .attr('class', 'line deadlift-line')
+                .attr('d', lineDeadlift)
+                .attr('stroke', exerciseColors.deadlift)
+                .attr('stroke-width', 2)
+                .attr('fill', 'none');
+            
+            g.append('path')
+                .datum(processedData)
+                .attr('class', 'line squat-line')
+                .attr('d', lineSquat)
+                .attr('stroke', exerciseColors.squat)
+                .attr('stroke-width', 2)
+                .attr('fill', 'none');
+            
+            // 축 추가
+            g.append('g')
+                .attr('class', 'axis')
+                .attr('transform', `translate(0, ${height})`)
+                .call(d3.axisBottom(xScale).tickFormat(d3.format('d')));
+            
+            g.append('g')
+                .attr('class', 'axis')
+                .call(d3.axisLeft(yScale));
+            
+            // 축 레이블
+            g.append('text')
+                .attr('class', 'axis-label')
+                .attr('x', width / 2)
+                .attr('y', height + 45)
+                .style('text-anchor', 'middle')
+                .text('연도');
+            
+            g.append('text')
+                .attr('class', 'axis-label')
+                .attr('transform', 'rotate(-90)')
+                .attr('x', -height / 2)
+                .attr('y', -50)
+                .style('text-anchor', 'middle')
+                .text('평균 기록 (kg)');
+            
+            // 마우스 오버 인터랙션을 위한 투명한 영역
+            const bisect = d3.bisector(d => d.year).left;
+            
+            const focus = g.append('g')
+                .attr('class', 'focus')
+                .style('display', 'none');
+            
+            focus.append('line')
+                .attr('class', 'hover-line')
+                .attr('stroke', '#999')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3');
+            
+            // 각 운동별 호버 포인트 (벤치프레스 → 데드리프트 → 스쿼트 순서)
+            ['bench', 'deadlift', 'squat'].forEach(exercise => {
+                focus.append('circle')
+                    .attr('class', `hover-circle-${exercise}`)
+                    .attr('r', 4)
+                    .attr('fill', exerciseColors[exercise])
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', 2);
+            });
+            
+            const overlay = g.append('rect')
+                .attr('class', 'overlay')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('fill', 'none')
+                .attr('pointer-events', 'all')
+                .on('mouseover', () => focus.style('display', null))
+                .on('mouseout', () => {
+                    focus.style('display', 'none');
+                    hideTooltip();
+                })
+                .on('mousemove', function(event) {
+                    const [mouseX] = d3.pointer(event);
+                    const x0 = xScale.invert(mouseX);
+                    const i = bisect(processedData, x0, 1);
+                    
+                    if (i < processedData.length) {
+                        const d0 = processedData[i - 1];
+                        const d1 = processedData[i];
+                        const d = d1 && d0 ? (x0 - d0.year > d1.year - x0 ? d1 : d0) : d0;
+                        
+                        if (d) {
+                            const x = xScale(d.year);
+                            
+                            focus.select('.hover-line')
+                                .attr('x1', x)
+                                .attr('x2', x)
+                                .attr('y1', 0)
+                                .attr('y2', height);
+                            
+                            focus.select('.hover-circle-bench')
+                                .attr('cx', x)
+                                .attr('cy', yScale(d.bench));
+                            
+                            focus.select('.hover-circle-deadlift')
+                                .attr('cx', x)
+                                .attr('cy', yScale(d.deadlift));
+                            
+                            focus.select('.hover-circle-squat')
+                                .attr('cx', x)
+                                .attr('cy', yScale(d.squat));
+                            
+                            showTooltip(event, d);
+                        }
+                    }
+                });
+            
+            // 차트 저장
+            window.currentChart = { g, xScale, yScale, areaSquat, areaBench, areaDeadlift, lineSquat, lineBench, lineDeadlift };
+        }
+        
+        // 차트 업데이트
+        function updateAreaChart() {
+            if (!window.currentChart) return;
+            
+            const { g, xScale, yScale, areaSquat, areaBench, areaDeadlift, lineSquat, lineBench, lineDeadlift } = window.currentChart;
+            
+            // 스케일 업데이트
+            xScale.domain(d3.extent(processedData, d => d.year));
+            yScale.domain([0, d3.max(processedData, d => Math.max(d.squat, d.bench, d.deadlift)) * 1.1]);
+            
+            // 영역 업데이트 (벤치프레스 → 데드리프트 → 스쿼트 순서)
+            g.select('.squat-area')
+                .datum(processedData)
+                .transition()
+                .duration(750)
+                .attr('d', areaSquat)
+                .attr('opacity', highlightedExercise === null || highlightedExercise === 'squat' ? 0.3 : 0.1);
+            
+            g.select('.deadlift-area')
+                .datum(processedData)
+                .transition()
+                .duration(750)
+                .attr('d', areaDeadlift)
+                .attr('opacity', highlightedExercise === null || highlightedExercise === 'deadlift' ? 0.3 : 0.1);
+            
+
+            g.select('.bench-area')
+                .datum(processedData)
+                .transition()
+                .duration(750)
+                .attr('d', areaBench)
+                .attr('opacity', highlightedExercise === null || highlightedExercise === 'bench' ? 0.3 : 0.1);
+            
+            // 선 업데이트 (같은 순서)
+            
+            
+           
+            
+            g.select('.squat-line')
+                .datum(processedData)
+                .transition()
+                .duration(750)
+                .attr('d', lineSquat)
+                .attr('stroke-width', highlightedExercise === null || highlightedExercise === 'squat' ? 2 : 1)
+                .attr('opacity', highlightedExercise === null || highlightedExercise === 'squat' ? 1 : 0.3);
+
+            g.select('.deadlift-line')
+                .datum(processedData)
+                .transition()
+                .duration(750)
+                .attr('d', lineDeadlift)
+                .attr('stroke-width', highlightedExercise === null || highlightedExercise === 'deadlift' ? 2 : 1)
+                .attr('opacity', highlightedExercise === null || highlightedExercise === 'deadlift' ? 1 : 0.3);
+
+            g.select('.bench-line')
+                .datum(processedData)
+                .transition()
+                .duration(750)
+                .attr('d', lineBench)
+                .attr('stroke-width', highlightedExercise === null || highlightedExercise === 'bench' ? 2 : 1)
+                .attr('opacity', highlightedExercise === null || highlightedExercise === 'bench' ? 1 : 0.3);
+            
+            // 축 업데이트
+            g.select('.axis')
+                .transition()
+                .duration(750)
+                .call(d3.axisBottom(xScale).tickFormat(d3.format('d')));
+            
+            g.selectAll('.axis').filter(function() {
+                return this.getAttribute('transform') !== `translate(0, ${height})`;
+            })
+                .transition()
+                .duration(750)
+                .call(d3.axisLeft(yScale));
+        }
+        
+        // 툴팁 표시
+        function showTooltip(event, d) {
+            const tooltip = d3.select('#tooltip');
+            tooltip.style('display', 'block')
+                .html(`
+                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #ffd700;">
+                        ${d.year}년 기록
+                    </div>
+                    <div style="margin-bottom: 6px;">
+                        <strong>샘플 데이터:</strong> ${d.count}개 (전체 ${d.actualCount}개)
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 8px 0;">
+                    <div style="margin-bottom: 4px; color: ${exerciseColors.bench};">
+                        <strong>● 벤치프레스 평균:</strong> ${d.bench.toFixed(1)}kg
+                    </div>
+                    <div style="margin-bottom: 4px; color: ${exerciseColors.deadlift};">
+                        <strong>● 데드리프트 평균:</strong> ${d.deadlift.toFixed(1)}kg
+                    </div>
+                    <div style="margin-bottom: 4px; color: ${exerciseColors.squat};">
+                        <strong>● 스쿼트 평균:</strong> ${d.squat.toFixed(1)}kg
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 8px 0;">
+                `)
+                .style('left', (event.pageX + 15) + 'px')
+                .style('top', (event.pageY - 15) + 'px');
+        }
+        
+        // 툴팁 숨기기
+        function hideTooltip() {
+            d3.select('#tooltip').style('display', 'none');
+        }
+        
+        // 시간 범위 업데이트
+        function updateTimeRange() {
+            const startYear = +document.getElementById('time-range-start').value;
+            const endYear = +document.getElementById('time-range-end').value;
+            
+            // 시작년도가 끝년도보다 크면 조정
+            if (startYear >= endYear) {
+                if (document.activeElement.id === 'time-range-start') {
+                    document.getElementById('time-range-end').value = startYear + 1;
+                } else {
+                    document.getElementById('time-range-start').value = endYear - 1;
+                }
+            }
+            
+            const finalStart = +document.getElementById('time-range-start').value;
+            const finalEnd = +document.getElementById('time-range-end').value;
+            
+            document.getElementById('current-range').textContent = 
+                `분석 기간: ${finalStart}년 ~ ${finalEnd}년`;
+            
+            processTimeSeriesData();
+            updateAreaChart();
+        }
+        
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 필터 변경
+            document.querySelectorAll('input[name="sex"]').forEach(input => {
+                input.addEventListener('change', filterData);
+            });
+            
+            document.getElementById('equipment-select').addEventListener('change', filterData);
+            document.getElementById('weightclass-select').addEventListener('change', filterData);
+            
+            // 시간 슬라이더
+            document.getElementById('time-range-start').addEventListener('input', updateTimeRange);
+            document.getElementById('time-range-end').addEventListener('input', updateTimeRange);
+            
+            // 범례 클릭
+            document.querySelectorAll('.legend-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const exercise = this.dataset.exercise;
+                    
+                    // 모든 범례 아이템 스타일 초기화
+                    document.querySelectorAll('.legend-item').forEach(i => {
+                        i.classList.remove('active');
+                    });
+                    
+                    if (highlightedExercise === exercise) {
+                        // 같은 운동 클릭 시 하이라이트 해제
+                        highlightedExercise = null;
+                    } else {
+                        // 다른 운동 클릭 시 하이라이트 설정
+                        highlightedExercise = exercise;
+                        this.classList.add('active');
+                    }
+                    
+                    updateAreaChart();
+                });
+            });
+            
+            // 초기화 버튼
+            document.getElementById('reset-btn').addEventListener('click', function() {
+                document.getElementById('sex-all').checked = true;
+                document.getElementById('equipment-select').value = 'all';
+                document.getElementById('weightclass-select').value = 'all';
+                document.getElementById('time-range-start').value = 2000;
+                document.getElementById('time-range-end').value = 2019;
+                highlightedExercise = null;
+                
+                // 범례 스타일 초기화
+                document.querySelectorAll('.legend-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                
+                updateTimeRange();
+                filterData();
+            });
+        }
+        
+        // 초기화
+        function init() {
+            console.log("Task 3 애플리케이션 초기화 중...");
+            loadData();
+        }
+        
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Powerlifting Data Analysis Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .task-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .task-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+        }
+
+        .task-header {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .task-card:nth-child(2) .task-header {
+            background: linear-gradient(45deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .task-card:nth-child(3) .task-header {
+            background: linear-gradient(45deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .task-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .task-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .task-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .task-content {
+            padding: 30px;
+        }
+
+        .task-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-size: 1rem;
+        }
+
+        .task-features {
+            list-style: none;
+            margin-bottom: 25px;
+        }
+
+        .task-features li {
+            color: #666;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.9rem;
+        }
+
+        .task-features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4facfe;
+            font-weight: bold;
+        }
+
+        .task-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .task-button:hover {
+            background: linear-gradient(45deg, #764ba2 0%, #667eea 100%);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .info-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+
+        .info-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .info-item p {
+            color: #666;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .tasks-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .task-content {
+                padding: 20px;
+            }
+        }
+
+        /* 로딩 애니메이션 */
+        .task-card {
+            animation: fadeInUp 0.6s ease forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .task-card:nth-child(1) { animation-delay: 0.1s; }
+        .task-card:nth-child(2) { animation-delay: 0.2s; }
+        .task-card:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>🏋️ Powerlifting Data Analysis</h1>
+            <p>파워리프팅 데이터를 통한 종합적인 성능 분석 및 시각화 대시보드</p>
+        </div>
+
+        <!-- 태스크 카드들 -->
+        <div class="tasks-grid">
+            <!-- Task 1 -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">Task 1</div>
+                    <div class="task-title">성별 기록 분포 분석</div>
+                    <div class="task-subtitle">Interactive Distribution Analysis</div>
+                </div>
+                <div class="task-content">
+                    
+                    <a href="task1.html" class="task-button">Task 1 시작하기</a>
+                </div>
+            </div>
+
+            <!-- Task 2 -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">Task 2</div>
+                    <div class="task-title">장비별 성능 비교</div>
+                    <div class="task-subtitle">Parallel Coordinates Visualization</div>
+                </div>
+                <div class="task-content">
+                    
+                    <a href="task2.html" class="task-button">Task 2 시작하기</a>
+                </div>
+            </div>
+
+            <!-- Task 3 -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">Task 3</div>
+                    <div class="task-title">체중별 성능 분석</div>
+                    <div class="task-subtitle">Weight Class Performance Study</div>
+                </div>
+                <div class="task-content">
+                    
+                    <a href="task3.html" class="task-button">Task 3 시작하기</a>
+                </div>
+            </div>
+        </div>
+
+        
+        <!-- 푸터 -->
+        <div class="footer">
+            <p>© 2025 Powerlifting Data Analysis Dashboard | Built with ❤️ and D3.js</p>
+        </div>
+    </div>
+
+    <script>
+        // 간단한 인터랙션 효과
+        document.addEventListener('DOMContentLoaded', function() {
+            // 카드 호버 효과 개선
+            const cards = document.querySelectorAll('.task-card');
+            
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-15px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // 버튼 클릭 효과
+            const buttons = document.querySelectorAll('.task-button');
+            
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    // 간단한 로딩 효과
+                    const originalText = this.textContent;
+                    this.textContent = '로딩 중...';
+                    this.style.pointerEvents = 'none';
+                    
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                        this.style.pointerEvents = 'auto';
+                    }, 1000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

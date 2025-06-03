@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 1: 체형 특성과 3대 운동 성능 관계 분석</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        /* 헤더 영역 */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        /* 필터 영역 */
+        .filters-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .filters-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .filter-group label {
+            font-weight: bold;
+            color: #495057;
+            margin: 0;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .radio-item input[type="radio"] {
+            margin: 0;
+        }
+        
+        .radio-item label {
+            font-weight: normal;
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            min-width: 120px;
+        }
+        
+        .reset-button {
+            background: #dc3545;
+            color: white;
+            border: 2px solid #dc3545;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .reset-button:hover {
+            background: #c82333;
+            border-color: #c82333;
+            transform: translateY(-2px);
+        }
+        
+        /* 메인 컨텐츠 영역 */
+        .main-content {
+            padding: 30px;
+            background: white;
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #495057;
+        }
+        
+        .chart-title h3 {
+            margin: 0 0 10px 0;
+            font-size: 22px;
+        }
+        
+        .chart-title p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        /* 매트릭스 컨테이너 */
+        .matrix-container {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        /* 범례 */
+        .legend {
+            background: white;
+            padding: 20px;
+            margin: 20px 30px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .legend h4 {
+            margin: 0 0 15px 0;
+            text-align: center;
+            color: #495057;
+            font-size: 16px;
+        }
+        
+        .legend-items {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: #f8f9fa;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+        
+        /* 차트 스타일 */
+        .axis-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+        
+        .diagonal-cell {
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 1px solid #ccc;
+        }
+        
+        .cell {
+            border: 1px solid #ddd;
+        }
+        
+        .data-point {
+            transition: all 0.2s ease;
+        }
+        
+        .data-point:hover {
+            stroke-width: 2 !important;
+            r: 5 !important;
+        }
+        
+        /* 툴팁 */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 200px;
+        }
+        
+        /* 로딩 및 에러 상태 */
+        .loading, .error {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 16px;
+        }
+        
+        .loading {
+            color: #6c757d;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            margin: 20px;
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .filters-row {
+                gap: 20px;
+            }
+            
+            .matrix-container {
+                padding: 20px;
+                overflow-x: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .filters-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .filter-group {
+                width: 100%;
+                justify-content: center;
+                padding: 12px 16px;
+            }
+            
+            .radio-group {
+                gap: 10px;
+            }
+            
+            .legend-items {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .matrix-container {
+                padding: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .header p {
+                font-size: 14px;
+            }
+            
+            .radio-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>Task 1: 체형 특성과 3대 운동 성능 관계 분석</h1>
+            <p>다변량 산점도 매트릭스를 통한 OpenPowerlifting 데이터 분석</p>
+        </div>
+
+        <!-- 필터 영역 -->
+        <div class="filters-section">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label>성별:</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="sex" value="all" id="sex-all" checked>
+                            <label for="sex-all">전체</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="sex" value="M" id="sex-male">
+                            <label for="sex-male">남성</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="sex" value="F" id="sex-female">
+                            <label for="sex-female">여성</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="weightclass-select">체급:</label>
+                    <select id="weightclass-select">
+                        <option value="all">전체</option>
+                        <option value="52">52kg</option>
+                        <option value="56">56kg</option>
+                        <option value="60">60kg</option>
+                        <option value="67.5">67.5kg</option>
+                        <option value="75">75kg</option>
+                        <option value="82.5">82.5kg</option>
+                        <option value="90">90kg</option>
+                        <option value="100">100kg</option>
+                        <option value="110">110kg</option>
+                        <option value="125">125kg</option>
+                        <option value="110+">110kg+</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <button class="reset-button" id="reset-btn">필터 초기화</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 로딩/에러 메시지 -->
+        <div id="loading" class="loading" style="display: block;">
+            CSV 파일을 로딩 중입니다...
+        </div>
+
+        <div id="error-message" class="error" style="display: none;"></div>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content" id="main-content" style="display: none;">
+            
+            <div class="matrix-container" id="matrix-container">
+                <h3>다변량 산점도 매트릭스</h3>
+                <div id="scatterplot-matrix"></div>
+            </div>
+        </div>
+
+        <!-- 범례 -->
+        <div class="legend" id="legend" style="display: none;">
+            <h4>색상 범례</h4>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <span class="legend-dot" style="background-color: #2196f3;"></span>
+                    <span>남성</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background-color: #f44336;"></span>
+                    <span>여성</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background-color: #ff9800; border: 2px solid #333;"></span>
+                    <span>선택된 데이터</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip" style="display: none;"></div>
+
+    <script>
+        // 전역 변수
+        let originalData = [];
+        let filteredData = [];
+        let selectedData = [];
+        
+        // 시각화에 사용할 변수들
+        const variables = ['BodyweightKg', 'Best3SquatKg', 'Best3BenchKg', 'Best3DeadliftKg'];
+        const variableLabels = {
+            'BodyweightKg': '체중 (kg)',
+            'Best3SquatKg': '스쿼트 (kg)',
+            'Best3BenchKg': '벤치프레스 (kg)',
+            'Best3DeadliftKg': '데드리프트 (kg)'
+        };
+        
+        // 매트릭스 설정
+        const matrixSize = 4;
+        const cellSize = 200;
+        const margin = {top: 25, right: 25, bottom: 35, left: 35};
+        const matrixMargin = {top: 60, right: 60, bottom: 60, left: 120};
+        
+        // 색상 설정
+        const colorScale = d3.scaleOrdinal()
+            .domain(['M', 'F'])
+            .range(['#2196f3', '#f44336']);
+
+        // CSV 데이터 로드
+        function loadData() {
+            d3.csv("openpowerlifting_used.csv").then(function(data) {
+                console.log("원본 데이터 로드 완료:", data.length, "개 레코드");
+                
+                // 데이터 전처리: SBD 이벤트이고 필요한 필드가 모두 있는 데이터만 필터링
+                originalData = data.filter(d => {
+                    return d.Event === 'SBD' && 
+                           d.BodyweightKg && !isNaN(+d.BodyweightKg) && +d.BodyweightKg > 0 &&
+                           d.Best3SquatKg && !isNaN(+d.Best3SquatKg) && +d.Best3SquatKg > 0 &&
+                           d.Best3BenchKg && !isNaN(+d.Best3BenchKg) && +d.Best3BenchKg > 0 &&
+                           d.Best3DeadliftKg && !isNaN(+d.Best3DeadliftKg) && +d.Best3DeadliftKg > 0 &&
+                           d.Sex && (d.Sex === 'M' || d.Sex === 'F');
+                }).map(d => ({
+                    Name: d.Name || 'Unknown',
+                    Sex: d.Sex,
+                    BodyweightKg: +d.BodyweightKg,
+                    Best3SquatKg: +d.Best3SquatKg,
+                    Best3BenchKg: +d.Best3BenchKg,
+                    Best3DeadliftKg: +d.Best3DeadliftKg,
+                    Equipment: d.Equipment || 'Unknown',
+                    WeightClassKg: d.WeightClassKg || 'Unknown',
+                    Wilks: d.Wilks ? +d.Wilks : null,
+                    Age: d.Age ? +d.Age : null,
+                    TotalKg: d.TotalKg ? +d.TotalKg : null
+                }));
+                
+                console.log("전처리된 데이터:", originalData.length, "개 레코드");
+                
+                if (originalData.length === 0) {
+                    showError("유효한 데이터를 찾을 수 없습니다. CSV 파일을 확인해주세요.");
+                    return;
+                }
+                
+                // 데이터가 너무 많으면 샘플링 (성능상의 이유)
+                if (originalData.length > 2000) {
+                    const sampledData = [];
+                    const sampleSize = 2000;
+                    const interval = Math.floor(originalData.length / sampleSize);
+                    
+                    for (let i = 0; i < originalData.length; i += interval) {
+                        sampledData.push(originalData[i]);
+                    }
+                    
+                    originalData = sampledData;
+                    console.log("샘플링된 데이터:", originalData.length, "개 레코드");
+                }
+                
+                filteredData = [...originalData];
+                hideLoading();
+                createScatterplotMatrix();
+                updateVisualization();
+                setupEventListeners();
+                
+            }).catch(function(error) {
+                console.error("CSV 로드 오류:", error);
+                showError("CSV 파일을 로드할 수 없습니다. 파일이 같은 폴더에 있는지 확인해주세요.");
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-message').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('legend').style.display = 'block';
+        }
+
+        // 데이터 필터링 함수
+        function filterData() {
+            const selectedSex = document.querySelector('input[name="sex"]:checked').value;
+            const selectedWeightClass = document.getElementById('weightclass-select').value;
+            
+            filteredData = originalData.filter(d => {
+                return (selectedSex === 'all' || d.Sex === selectedSex) &&
+                       (selectedWeightClass === 'all' || d.WeightClassKg === selectedWeightClass);
+            });
+            
+            updateVisualization();
+        }
+
+        // 산점도 매트릭스 생성
+        function createScatterplotMatrix() {
+            // 기존 SVG 제거
+            d3.select('#scatterplot-matrix').selectAll('*').remove();
+            
+            const totalWidth = matrixSize * cellSize + matrixMargin.left + matrixMargin.right;
+            const totalHeight = matrixSize * cellSize + matrixMargin.top + matrixMargin.bottom;
+            
+            const svg = d3.select('#scatterplot-matrix')
+                .append('svg')
+                .attr('width', totalWidth)
+                .attr('height', totalHeight)
+                .style('display', 'block')
+                .style('margin', '0 auto');
+            
+            const g = svg.append('g')
+                .attr('transform', `translate(${matrixMargin.left}, ${matrixMargin.top})`);
+            
+            // 각 변수의 스케일 생성
+            const scales = {};
+            variables.forEach(variable => {
+                scales[variable] = d3.scaleLinear()
+                    .domain(d3.extent(originalData, d => d[variable]))
+                    .range([cellSize - margin.bottom, margin.top]);
+            });
+            
+            // 매트릭스 셀 생성
+            for (let i = 0; i < matrixSize; i++) {
+                for (let j = 0; j < matrixSize; j++) {
+                    const cellGroup = g.append('g')
+                        .attr('transform', `translate(${j * cellSize}, ${i * cellSize})`)
+                        .attr('class', `cell-${i}-${j}`);
+                    
+                    // 테두리
+                    cellGroup.append('rect')
+                        .attr('width', cellSize)
+                        .attr('height', cellSize)
+                        .attr('fill', 'none')
+                        .attr('stroke', '#ddd');
+                    
+                    if (i === j) {
+                        // 대각선 셀 - 변수 이름
+                        cellGroup.append('rect')
+                            .attr('width', cellSize)
+                            .attr('height', cellSize)
+                            .attr('fill', '#f8f9fa')
+                            .attr('stroke', '#dee2e6');
+                        
+                        cellGroup.append('text')
+                            .attr('x', cellSize / 2)
+                            .attr('y', cellSize / 2)
+                            .attr('text-anchor', 'middle')
+                            .attr('dominant-baseline', 'middle')
+                            .attr('font-weight', 'bold')
+                            .attr('font-size', '14px')
+                            .attr('fill', '#495057')
+                            .text(variableLabels[variables[i]]);
+                    } else {
+                        // 산점도 셀
+                        createScatterplot(cellGroup, variables[j], variables[i], scales, i, j);
+                    }
+                }
+            }
+            
+            // 축 레이블 추가
+            variables.forEach((variable, index) => {
+                // X축 레이블
+                g.append('text')
+                    .attr('x', index * cellSize + cellSize / 2)
+                    .attr('y', -15)
+                    .attr('text-anchor', 'middle')
+                    .attr('font-size', '13px')
+                    .attr('font-weight', 'bold')
+                    .attr('fill', '#495057')
+                    .text(variableLabels[variable]);
+                
+                // Y축 레이블
+                g.append('text')
+                    .attr('x', -15)
+                    .attr('y', index * cellSize + cellSize / 2)
+                    .attr('text-anchor', 'middle')
+                    .attr('dominant-baseline', 'middle')
+                    .attr('font-size', '13px')
+                    .attr('font-weight', 'bold')
+                    .attr('fill', '#495057')
+                    .attr('transform', `rotate(-90, -15, ${index * cellSize + cellSize / 2})`)
+                    .text(variableLabels[variable]);
+            });
+        }
+        
+        // 개별 산점도 생성
+        function createScatterplot(container, xVar, yVar, scales, i, j) {
+            const xScale = d3.scaleLinear()
+                .domain(d3.extent(originalData, d => d[xVar]))
+                .range([margin.left, cellSize - margin.right]);
+            
+            const yScale = scales[yVar];
+            
+            // 브러시 설정
+            const brush = d3.brush()
+                .extent([[margin.left, margin.top], [cellSize - margin.right, cellSize - margin.bottom]])
+                .on('end', function(event) {
+                    if (!event.selection) {
+                        selectedData = [];
+                    } else {
+                        const [[x0, y0], [x1, y1]] = event.selection;
+                        selectedData = filteredData.filter(d => {
+                            const x = xScale(d[xVar]);
+                            const y = yScale(d[yVar]);
+                            return x >= x0 && x <= x1 && y >= y0 && y <= y1;
+                        });
+                    }
+                    updateVisualization();
+                });
+            
+            container.append('g').call(brush);
+            
+            // 축 생성
+            container.append('g')
+                .attr('transform', `translate(0, ${cellSize - margin.bottom})`)
+                .call(d3.axisBottom(xScale).ticks(4).tickFormat(d3.format('.0f')))
+                .selectAll('text')
+                .style('font-size', '11px');
+            
+            container.append('g')
+                .attr('transform', `translate(${margin.left}, 0)`)
+                .call(d3.axisLeft(yScale).ticks(4).tickFormat(d3.format('.0f')))
+                .selectAll('text')
+                .style('font-size', '11px');
+        }
+        
+        // 시각화 업데이트
+        function updateVisualization() {
+            const svg = d3.select('#scatterplot-matrix svg');
+            
+            // 모든 점 제거
+            svg.selectAll('.data-point').remove();
+            
+            // 각 셀에 점 추가
+            for (let i = 0; i < matrixSize; i++) {
+                for (let j = 0; j < matrixSize; j++) {
+                    if (i !== j) {
+                        const xVar = variables[j];
+                        const yVar = variables[i];
+                        
+                        const xScale = d3.scaleLinear()
+                            .domain(d3.extent(originalData, d => d[xVar]))
+                            .range([margin.left, cellSize - margin.right]);
+                        
+                        const yScale = d3.scaleLinear()
+                            .domain(d3.extent(originalData, d => d[yVar]))
+                            .range([cellSize - margin.bottom, margin.top]);
+                        
+                        const cellGroup = d3.select(`.cell-${i}-${j}`);
+                        
+                        // 데이터 점 추가
+                        cellGroup.selectAll('.data-point')
+                            .data(filteredData)
+                            .enter()
+                            .append('circle')
+                            .attr('class', 'data-point')
+                            .attr('cx', d => xScale(d[xVar]))
+                            .attr('cy', d => yScale(d[yVar]))
+                            .attr('r', d => selectedData.includes(d) ? 4 : 2)
+                            .attr('fill', d => selectedData.includes(d) ? '#ff9800' : colorScale(d.Sex))
+                            .attr('opacity', d => selectedData.includes(d) ? 1 : 0.7)
+                            .attr('stroke', d => selectedData.includes(d) ? '#333' : 'none')
+                            .attr('stroke-width', d => selectedData.includes(d) ? 1 : 0)
+                            .on('mouseover', function(event, d) {
+                                showTooltip(event, d);
+                            })
+                            .on('mouseout', hideTooltip);
+                    }
+                }
+            }
+        }
+        
+        // 툴팁 표시
+        function showTooltip(event, d) {
+            const tooltip = d3.select('#tooltip');
+            tooltip.style('display', 'block')
+                .html(`
+                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #ffd700;">${d.Name}</div>
+                    <div style="margin-bottom: 4px;"><strong>성별:</strong> ${d.Sex === 'M' ? '남성' : '여성'}</div>
+                    <div style="margin-bottom: 4px;"><strong>체중:</strong> ${d.BodyweightKg.toFixed(1)}kg</div>
+                    <div style="margin-bottom: 4px;"><strong>스쿼트:</strong> ${d.Best3SquatKg.toFixed(1)}kg</div>
+                    <div style="margin-bottom: 4px;"><strong>벤치프레스:</strong> ${d.Best3BenchKg.toFixed(1)}kg</div>
+                    <div style="margin-bottom: 4px;"><strong>데드리프트:</strong> ${d.Best3DeadliftKg.toFixed(1)}kg</div>
+                    ${d.Wilks ? `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.3); color: #87ceeb;"><strong>Wilks 점수:</strong> ${d.Wilks.toFixed(1)}</div>` : ''}
+                `)
+                .style('left', (event.pageX + 15) + 'px')
+                .style('top', (event.pageY - 15) + 'px');
+        }
+        
+        // 툴팁 숨기기
+        function hideTooltip() {
+            d3.select('#tooltip').style('display', 'none');
+        }
+        
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 필터 변경 시 업데이트
+            document.querySelectorAll('input[name="sex"]').forEach(input => {
+                input.addEventListener('change', filterData);
+            });
+            
+            document.getElementById('weightclass-select').addEventListener('change', filterData);
+            
+            // 초기화 버튼
+            document.getElementById('reset-btn').addEventListener('click', function() {
+                document.getElementById('sex-all').checked = true;
+                document.getElementById('weightclass-select').value = 'all';
+                selectedData = [];
+                filterData();
+            });
+        }
+        
+        // 초기화
+        function init() {
+            console.log("Task 1 애플리케이션 초기화 중...");
+            loadData();
+        }
+        
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

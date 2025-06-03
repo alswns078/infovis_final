@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 2: 장비 유형별 리프팅 성능 비교</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        /* 헤더 영역 */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        /* 필터 영역 - 상단 고정 */
+        .filters-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .filters-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .filter-group label {
+            font-weight: bold;
+            color: #495057;
+            margin: 0;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .radio-item input[type="radio"] {
+            margin: 0;
+        }
+        
+        .radio-item label {
+            font-weight: normal;
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        /* 메인 컨텐츠 영역 */
+        .main-content {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 50px;
+            display: flex;
+            min-height: 400px;
+            text-align: center;
+        }
+        
+        /* 차트 영역 - 왼쪽 */
+        .chart-area {
+            flex: 2;
+            padding: 30px;
+            background: white;
+            border-right: 3px solid #e9ecef;
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #495057;
+        }
+        
+        /* 사이드바 - 오른쪽 */
+        .sidebar {
+            flex: 1;
+            min-width: 350px;
+            background: #f8f9fa;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        /* 장비 필터 컨트롤 */
+        .equipment-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .equipment-controls h3 {
+            margin: 0 0 20px 0;
+            color: #495057;
+            text-align: center;
+            font-size: 18px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        
+        .equipment-buttons {
+            display: grid;
+            
+            gap: 8px;
+        }
+        
+        .equipment-button {
+            
+            padding: 12px 16px;
+            border: 2px solid;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .equipment-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .equipment-button.active {
+            
+            background-color: rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+        
+        .reset-button {
+            /* margin-top: 15px; */
+            background: #dc3545;
+            color: white;
+            border: 2px solid #dc3545;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .reset-button:hover {
+            background: #c82333;
+            border-color: #c82333;
+        }
+        
+        /* 통계 패널 */
+        .stats-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            flex-grow: 1;
+        }
+        
+        .stats-panel h3 {
+            margin: 0 0 20px 0;
+            color: #495057;
+            text-align: center;
+            font-size: 18px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        
+        .stats-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .stats-item {
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        
+        .stats-item .equipment-name {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+        
+        .stats-item .equipment-details {
+            font-size: 12px;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+        
+        /* 범례 */
+        .legend {
+            background: white;
+            padding: 20px;
+            margin: 20px 30px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .legend h4 {
+            margin: 0 0 15px 0;
+            text-align: center;
+            color: #495057;
+        }
+        
+        .legend-items {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+        
+        .legend-item:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+        
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+        
+        .legend-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        /* 차트 스타일 */
+        .parallel-coords {
+            overflow: visible;
+        }
+        
+        .line {
+            fill: none;
+            stroke-width: 1.5;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        
+        .line:hover {
+            opacity: 1;
+            stroke-width: 3;
+        }
+        
+        .line.highlighted {
+            opacity: 0.9;
+            stroke-width: 2.5;
+        }
+        
+        .line.faded {
+            opacity: 0.15;
+        }
+        
+        .axis-line {
+            stroke: #333;
+            stroke-width: 2;
+        }
+        
+        .axis-label {
+            font-size: 14px;
+            font-weight: bold;
+            text-anchor: middle;
+            fill: #333;
+        }
+        
+        /* 툴팁 */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 200px;
+        }
+        
+        /* 로딩 및 에러 상태 */
+        .loading, .error {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 16px;
+        }
+        
+        .loading {
+            color: #6c757d;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        .equipment-buttons-row{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .equipment-buttons-row {
+                gap: 10px;
+                
+            }
+            
+            .equipment-buttons-row .equipment-button,
+            .equipment-buttons-row .reset-button {
+                
+                min-width: 100px;
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .filters-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .filter-group {
+                /* width: 100%; */
+                justify-content: center;
+            }
+            
+            .equipment-buttons-row {
+                
+                /* flex-direction: column; */
+                gap: 8px;
+            }
+            
+            .equipment-buttons-row .equipment-button,
+            .equipment-buttons-row .reset-button {
+                width: 100%;
+                max-width: 250px;
+            }
+            
+            .legend-items {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>Task 2: 장비 유형별 리프팅 성능 비교</h1>
+            <p>평행 좌표 그래프를 통한 장비별 3대 운동 성능과 체형 특성 분석</p>
+        </div>
+
+        <!-- 필터 영역 -->
+        <div class="filters-section">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label>성별:</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="sex" value="all" id="sex-all" checked>
+                            <label for="sex-all">전체</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="sex" value="M" id="sex-male">
+                            <label for="sex-male">남성</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="sex" value="F" id="sex-female">
+                            <label for="sex-female">여성</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="sample-size">데이터 수:</label>
+                    <select id="sample-size">
+                        <option value="300">300개</option>
+                        <option value="500" selected>500개</option>
+                        <option value="800">800개</option>
+                        <option value="1000">1000개</option>
+                        <option value="all">전체 (최대 1500개)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 장비 필터 (타이틀 아래로 이동) -->
+            <div class="equipment-buttons-row">
+                <button class="equipment-button" data-equipment="all" style="border-color: #333; color: #333;">All</button>
+                <button class="equipment-button" data-equipment="Raw" style="border-color: #2196f3; color: #2196f3;">Raw</button>
+                <button class="equipment-button" data-equipment="Wraps" style="border-color: #4caf50; color: #4caf50;">Wraps</button>
+                <button class="equipment-button" data-equipment="Single-ply" style="border-color: #ff9800; color: #ff9800;">Single-ply</button>
+                <button class="equipment-button" data-equipment="Multi-ply" style="border-color: #9c27b0; color: #9c27b0;">Multi-ply</button>
+                <button class="reset-button" id="reset-btn">필터 초기화</button>
+            </div>
+            
+        </div>
+
+        <!-- 로딩/에러 메시지 -->
+        <div id="loading" class="loading" style="display: block;">
+            CSV 파일을 로딩 중입니다...
+        </div>
+
+        <div id="error-message" class="error" style="display: none;"></div>
+
+        <!-- 메인 컨텐츠 - 차트만 -->
+        <div class="main-content" id="main-content" style="display: none;">
+            <h3>평행 좌표 그래프</h3>
+            <div id="parallel-coords-chart"></div>
+        </div>
+
+        <!-- 범례 -->
+        <div class="legend" id="legend" style="display: none;">
+            <h4>장비 유형별 색상 범례</h4>
+            <div class="legend-items">
+                <div class="legend-item" data-equipment="Raw">
+                    <span class="legend-dot" style="background-color: #2196f3;"></span>
+                    <span class="legend-text">Raw</span>
+                </div>
+                <div class="legend-item" data-equipment="Wraps">
+                    <span class="legend-dot" style="background-color: #4caf50;"></span>
+                    <span class="legend-text">Wraps</span>
+                </div>
+                <div class="legend-item" data-equipment="Single-ply">
+                    <span class="legend-dot" style="background-color: #ff9800;"></span>
+                    <span class="legend-text">Single-ply</span>
+                </div>
+                <div class="legend-item" data-equipment="Multi-ply">
+                    <span class="legend-dot" style="background-color: #9c27b0;"></span>
+                    <span class="legend-text">Multi-ply</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip" style="display: none;"></div>
+
+    <script>
+        // 전역 변수
+        let originalData = [];
+        let filteredData = [];
+        let currentEquipmentFilter = 'all';
+        let highlightedEquipment = null;
+        
+        // 차트 설정
+        const margin = {top: 50, right: 50, bottom: 50, left: 80};
+        const width = 900 - margin.left - margin.right;
+        const height = 500 - margin.top - margin.bottom;
+        
+        // 평행 좌표에 사용할 변수들
+        const dimensions = [
+            {key: 'BodyweightKg', name: '체중 (kg)', format: '.1f'},
+            {key: 'Best3SquatKg', name: '스쿼트 (kg)', format: '.0f'},
+            {key: 'Best3BenchKg', name: '벤치프레스 (kg)', format: '.0f'},
+            {key: 'Best3DeadliftKg', name: '데드리프트 (kg)', format: '.0f'},
+            {key: 'Wilks', name: 'Wilks 점수', format: '.1f'}
+        ];
+        
+        // 장비별 색상
+        const equipmentColors = {
+            'Raw': '#2196f3',
+            'Wraps': '#4caf50',
+            'Single-ply': '#ff9800',
+            'Multi-ply': '#9c27b0'
+        };
+
+        // CSV 데이터 로드
+        function loadData() {
+            d3.csv("openpowerlifting_used.csv").then(function(data) {
+                console.log("원본 데이터 로드 완료:", data.length, "개 레코드");
+                
+                // 데이터 전처리
+                originalData = data.filter(d => {
+                    return d.Event === 'SBD' && 
+                           d.BodyweightKg && !isNaN(+d.BodyweightKg) && +d.BodyweightKg > 0 &&
+                           d.Best3SquatKg && !isNaN(+d.Best3SquatKg) && +d.Best3SquatKg > 0 &&
+                           d.Best3BenchKg && !isNaN(+d.Best3BenchKg) && +d.Best3BenchKg > 0 &&
+                           d.Best3DeadliftKg && !isNaN(+d.Best3DeadliftKg) && +d.Best3DeadliftKg > 0 &&
+                           d.Sex && (d.Sex === 'M' || d.Sex === 'F') &&
+                           d.Equipment && ['Raw', 'Wraps', 'Single-ply', 'Multi-ply'].includes(d.Equipment) &&
+                           d.Wilks && !isNaN(+d.Wilks) && +d.Wilks > 0;
+                }).map(d => ({
+                    Name: d.Name || 'Unknown',
+                    Sex: d.Sex,
+                    BodyweightKg: +d.BodyweightKg,
+                    Best3SquatKg: +d.Best3SquatKg,
+                    Best3BenchKg: +d.Best3BenchKg,
+                    Best3DeadliftKg: +d.Best3DeadliftKg,
+                    Equipment: d.Equipment,
+                    WeightClassKg: d.WeightClassKg || 'Unknown',
+                    Wilks: +d.Wilks,
+                    Age: d.Age ? +d.Age : null,
+                    TotalKg: d.TotalKg ? +d.TotalKg : null
+                }));
+                
+                console.log("전처리된 데이터:", originalData.length, "개 레코드");
+                
+                if (originalData.length === 0) {
+                    showError("유효한 데이터를 찾을 수 없습니다. CSV 파일을 확인해주세요.");
+                    return;
+                }
+                
+                // 초기 로드 시 적당한 양만 선택 (성능 최적화)
+                if (originalData.length > 1500) {
+                    // Wilks 점수 기준으로 정렬 후 상위권과 다양한 샘플 혼합
+                    originalData.sort((a, b) => b.Wilks - a.Wilks);
+                    
+                    // 상위 30% + 각 장비별 균등 샘플링
+                    const topPerformers = originalData.slice(0, Math.min(500, Math.floor(originalData.length * 0.3)));
+                    
+                    // 장비별로 균등하게 샘플링
+                    const equipmentSamples = {};
+                    ['Raw', 'Wraps', 'Single-ply', 'Multi-ply'].forEach(eq => {
+                        const equipmentData = originalData.filter(d => d.Equipment === eq);
+                        if (equipmentData.length > 0) {
+                            const sampleSize = Math.min(250, Math.floor(equipmentData.length * 0.4));
+                            equipmentSamples[eq] = d3.shuffle(equipmentData).slice(0, sampleSize);
+                        }
+                    });
+                    
+                    // 상위 성능자와 장비별 샘플 합치기
+                    const combinedSample = [...topPerformers];
+                    Object.values(equipmentSamples).forEach(samples => {
+                        samples.forEach(sample => {
+                            if (!combinedSample.find(d => d.Name === sample.Name)) {
+                                combinedSample.push(sample);
+                            }
+                        });
+                    });
+                    
+                    // 최종적으로 1500개로 제한
+                    originalData = d3.shuffle(combinedSample).slice(0, 1500);
+                    console.log("초기 샘플링된 데이터:", originalData.length, "개 레코드");
+                }
+                
+                filteredData = [...originalData];
+                hideLoading();
+                createParallelCoordinates();
+                setupEventListeners();
+                updateEquipmentStats();
+                
+            }).catch(function(error) {
+                console.error("CSV 로드 오류:", error);
+                showError("CSV 파일을 로드할 수 없습니다. 파일이 같은 폴더에 있는지 확인해주세요.");
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-message').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('legend').style.display = 'block';
+        }
+
+        // 데이터 필터링
+        function filterData() {
+            const selectedSex = document.querySelector('input[name="sex"]:checked').value;
+            const sampleSize = document.getElementById('sample-size').value;
+            
+            // 성별 필터링
+            let filtered = originalData.filter(d => {
+                return (selectedSex === 'all' || d.Sex === selectedSex) &&
+                       (currentEquipmentFilter === 'all' || d.Equipment === currentEquipmentFilter);
+            });
+            
+            // 샘플링
+            if (sampleSize !== 'all' && filtered.length > +sampleSize) {
+                // Wilks 점수 기준으로 정렬 후 상위권과 랜덤 샘플 혼합
+                filtered.sort((a, b) => b.Wilks - a.Wilks);
+                const topPerformers = filtered.slice(0, Math.floor(+sampleSize * 0.3));
+                const remaining = filtered.slice(Math.floor(+sampleSize * 0.3));
+                const randomSample = d3.shuffle(remaining).slice(0, +sampleSize - topPerformers.length);
+                filtered = [...topPerformers, ...randomSample];
+            }
+            
+            filteredData = filtered;
+            updateParallelCoordinates();
+            updateEquipmentStats();
+        }
+
+        // 평행 좌표 그래프 생성
+        function createParallelCoordinates() {
+            // 기존 차트 제거
+            d3.select('#parallel-coords-chart').selectAll('*').remove();
+            
+            const svg = d3.select('#parallel-coords-chart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .style('display', 'block')
+                .style('margin', '0 auto');
+            
+            const g = svg.append('g')
+                .attr('transform', `translate(${margin.left}, ${margin.top})`);
+            
+            // 각 차원별 스케일 생성
+            const scales = {};
+            const xScale = d3.scalePoint()
+                .domain(dimensions.map(d => d.key))
+                .range([0, width]);
+            
+            dimensions.forEach(dim => {
+                scales[dim.key] = d3.scaleLinear()
+                    .domain(d3.extent(originalData, d => d[dim.key]))
+                    .range([height, 0]);
+            });
+            
+            // 축 그리기
+            dimensions.forEach(dim => {
+                const x = xScale(dim.key);
+                
+                // 축 라인
+                g.append('line')
+                    .attr('class', 'axis-line')
+                    .attr('x1', x)
+                    .attr('y1', 0)
+                    .attr('x2', x)
+                    .attr('y2', height);
+                
+                // 축 레이블
+                g.append('text')
+                    .attr('class', 'axis-label')
+                    .attr('x', x)
+                    .attr('y', -20)
+                    .text(dim.name);
+                
+                // 축 눈금
+                g.append('g')
+                    .attr('transform', `translate(${x}, 0)`)
+                    .call(d3.axisLeft(scales[dim.key]).ticks(6).tickFormat(d3.format(dim.format)));
+            });
+            
+            // 라인 그룹 생성 (나중에 업데이트용)
+            g.append('g').attr('class', 'lines-group');
+            
+            updateParallelCoordinates();
+        }
+        
+        // 평행 좌표 업데이트
+        function updateParallelCoordinates() {
+            const svg = d3.select('#parallel-coords-chart svg g');
+            const linesGroup = svg.select('.lines-group');
+            
+            const xScale = d3.scalePoint()
+                .domain(dimensions.map(d => d.key))
+                .range([0, width]);
+            
+            const scales = {};
+            dimensions.forEach(dim => {
+                scales[dim.key] = d3.scaleLinear()
+                    .domain(d3.extent(originalData, d => d[dim.key]))
+                    .range([height, 0]);
+            });
+            
+            // 라인 함수
+            const line = d3.line()
+                .x(d => xScale(d.dimension))
+                .y(d => scales[d.dimension](d.value));
+            
+            // 데이터를 라인 형태로 변환
+            const lineData = filteredData.map(d => ({
+                data: d,
+                values: dimensions.map(dim => ({
+                    dimension: dim.key,
+                    value: d[dim.key]
+                }))
+            }));
+            
+            // 라인 업데이트
+            const lines = linesGroup.selectAll('.line')
+                .data(lineData, d => d.data.Name);
+            
+            lines.exit().remove();
+            
+            lines.enter()
+                .append('path')
+                .attr('class', 'line')
+                .merge(lines)
+                .attr('d', d => line(d.values))
+                .attr('stroke', d => equipmentColors[d.data.Equipment])
+                .attr('opacity', d => {
+                    if (highlightedEquipment === null) return 0.6;
+                    return d.data.Equipment === highlightedEquipment ? 0.9 : 0.15;
+                })
+                .attr('stroke-width', d => {
+                    if (highlightedEquipment === null) return 1.5;
+                    return d.data.Equipment === highlightedEquipment ? 2.5 : 1;
+                })
+                .on('mouseover', function(event, d) {
+                    showTooltip(event, d.data);
+                    d3.select(this).attr('stroke-width', 3).attr('opacity', 1);
+                })
+                .on('mouseout', function(event, d) {
+                    hideTooltip();
+                    const defaultWidth = highlightedEquipment === null ? 1.5 : 
+                                       (d.data.Equipment === highlightedEquipment ? 2.5 : 1);
+                    const defaultOpacity = highlightedEquipment === null ? 0.6 :
+                                         (d.data.Equipment === highlightedEquipment ? 0.9 : 0.15);
+                    d3.select(this).attr('stroke-width', defaultWidth).attr('opacity', defaultOpacity);
+                });
+        }
+        
+        // 장비별 통계 업데이트 - 제거된 함수
+        function updateEquipmentStats() {
+            // 통계 패널이 제거되었으므로 이 함수는 비활성화
+            return;
+        }
+        
+        function getEquipmentIcon(equipment) {
+            // 이모지 제거 - 필요 없음
+            return '';
+        }
+        
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            if (!result) return '0,0,0';
+            return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
+        }
+        
+        // 툴팁 표시
+        function showTooltip(event, d) {
+            const tooltip = d3.select('#tooltip');
+            tooltip.style('display', 'block')
+                .html(`
+                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #ffd700;">
+                        ${d.Name}
+                    </div>
+                    <div style="margin-bottom: 6px;">
+                        <strong>장비:</strong> 
+                        <span style="color: ${equipmentColors[d.Equipment]}; font-weight: bold;">
+                            ${d.Equipment}
+                        </span>
+                    </div>
+                    <div style="margin-bottom: 6px;">
+                        <strong>성별:</strong> ${d.Sex === 'M' ? '남성' : '여성'}
+                    </div>
+                    <div style="margin-bottom: 6px;">
+                        <strong>체중:</strong> ${d.BodyweightKg.toFixed(1)}kg
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 8px 0;">
+                    <div style="margin-bottom: 4px;">
+                        <strong>스쿼트:</strong> ${d.Best3SquatKg.toFixed(1)}kg
+                    </div>
+                    <div style="margin-bottom: 4px;">
+                        <strong>벤치프레스:</strong> ${d.Best3BenchKg.toFixed(1)}kg
+                    </div>
+                    <div style="margin-bottom: 4px;">
+                        <strong>데드리프트:</strong> ${d.Best3DeadliftKg.toFixed(1)}kg
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 8px 0;">
+                    <div style="color: #87ceeb; font-weight: bold;">
+                        <strong>Wilks 점수:</strong> ${d.Wilks.toFixed(1)}
+                    </div>
+                `)
+                .style('left', (event.pageX + 15) + 'px')
+                .style('top', (event.pageY - 15) + 'px');
+        }
+        
+        function hideTooltip() {
+            d3.select('#tooltip').style('display', 'none');
+        }
+        
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 장비 버튼 클릭
+            document.querySelectorAll('.equipment-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    // 기존 활성화 제거
+                    document.querySelectorAll('.equipment-button').forEach(b => b.classList.remove('active'));
+                    
+                    // 새로운 활성화
+                    this.classList.add('active');
+                    const equipment = this.dataset.equipment;
+                    
+                    if (equipment === 'all') {
+                        currentEquipmentFilter = 'all';
+                        highlightedEquipment = null;
+                    } else {
+                        currentEquipmentFilter = equipment;
+                        highlightedEquipment = equipment;
+                    }
+                    
+                    filterData();
+                });
+            });
+            
+            // 범례 클릭
+            document.querySelectorAll('.legend-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const equipment = this.dataset.equipment;
+                    
+                    if (highlightedEquipment === equipment) {
+                        highlightedEquipment = null;
+                        // 모든 범례 아이템 스타일 초기화
+                        document.querySelectorAll('.legend-item').forEach(i => {
+                            i.style.backgroundColor = '';
+                            i.style.transform = '';
+                        });
+                    } else {
+                        highlightedEquipment = equipment;
+                        // 모든 범례 아이템 스타일 초기화
+                        document.querySelectorAll('.legend-item').forEach(i => {
+                            i.style.backgroundColor = '';
+                            i.style.transform = '';
+                        });
+                        // 선택된 아이템 하이라이트
+                        this.style.backgroundColor = 'rgba(0,0,0,0.1)';
+                        this.style.transform = 'scale(1.05)';
+                    }
+                    
+                    updateParallelCoordinates();
+                });
+            });
+            
+            // 성별 필터
+            document.querySelectorAll('input[name="sex"]').forEach(input => {
+                input.addEventListener('change', filterData);
+            });
+            
+            // 샘플 크기
+            document.getElementById('sample-size').addEventListener('change', filterData);
+            
+            // 초기화 버튼
+            document.getElementById('reset-btn').addEventListener('click', function() {
+                document.getElementById('sex-all').checked = true;
+                document.getElementById('sample-size').value = '500';
+                currentEquipmentFilter = 'all';
+                highlightedEquipment = null;
+                
+                // 장비 버튼 초기화
+                document.querySelectorAll('.equipment-button').forEach(b => {
+                    b.classList.remove('active');
+                });
+                document.querySelector('[data-equipment="all"]').classList.add('active');
+                
+                // 범례 스타일 초기화
+                document.querySelectorAll('.legend-item').forEach(i => {
+                    i.style.backgroundColor = '';
+                    i.style.transform = '';
+                });
+                
+                filterData();
+            });
+            
+            // 초기 상태 설정
+            document.querySelector('[data-equipment="all"]').classList.add('active');
+        }
+        
+        // 초기화
+        function init() {
+            console.log("Task 2 애플리케이션 초기화 중...");
+            loadData();
+        }
+        
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
