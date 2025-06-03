@@ -561,7 +561,6 @@
             'deadlift': '데드리프트'
         };
 
-        // CSV 데이터 로드
         function loadData() {
             d3.csv("openpowerlifting_used.csv").then(function(data) {
                 console.log("원본 데이터 로드 완료:", data.length, "개 레코드");
@@ -627,7 +626,6 @@
             document.getElementById('legend').style.display = 'block';
         }
 
-        // 데이터 필터링
         function filterData() {
             const selectedSex = document.querySelector('input[name="sex"]:checked').value;
             const selectedEquipment = document.getElementById('equipment-select').value;
@@ -636,17 +634,14 @@
             filteredData = originalData.filter(d => {
                 let passFilter = true;
                 
-                // 성별 필터
                 if (selectedSex !== 'all') {
                     passFilter = passFilter && d.Sex === selectedSex;
                 }
                 
-                // 장비 필터
                 if (selectedEquipment !== 'all') {
                     passFilter = passFilter && d.Equipment === selectedEquipment;
                 }
                 
-                // 체급 필터
                 if (selectedWeightClass !== 'all') {
                     const weight = d.BodyweightKg;
                     switch(selectedWeightClass) {
@@ -669,27 +664,24 @@
             updateAreaChart();
         }
 
-        // 시계열 데이터 처리 (연도별 동일 샘플 수)
         function processTimeSeriesData() {
             const startYear = +document.getElementById('time-range-start').value;
             const endYear = +document.getElementById('time-range-end').value;
             
-            // 연도별 필터링
             const yearFilteredData = filteredData.filter(d => 
                 d.Year >= startYear && d.Year <= endYear
             );
             
-            // 연도별 그룹화
+
             const yearlyGroups = d3.group(yearFilteredData, d => d.Year);
             
-            // 각 연도별 데이터 수 확인
             const yearlyCounts = Array.from(yearlyGroups.entries()).map(([year, data]) => ({
                 year: year,
                 count: data.length,
                 data: data
             }));
             
-            // 가장 적은 데이터 수를 가진 연도 찾기
+   
             const minCount = d3.min(yearlyCounts, d => d.count);
             console.log(`최소 샘플 수: ${minCount}개, 이 수로 모든 연도를 통일합니다.`);
             
@@ -697,15 +689,14 @@
             
             yearlyCounts.forEach(({ year, data }) => {
                 if (data.length >= minCount && minCount > 0) {
-                    // 상위 성능자 위주로 샘플링 (Wilks 점수 기준)
+                
                     const sortedData = data
                         .filter(d => d.Wilks && d.Wilks > 0)
                         .sort((a, b) => b.Wilks - a.Wilks);
                     
-                    // 상위 성능자부터 minCount만큼 선택
+                  
                     const sampledData = sortedData.slice(0, Math.min(minCount, sortedData.length));
-                    
-                    // 샘플 수가 부족한 경우 전체 데이터에서 무작위 선택
+                   
                     if (sampledData.length < minCount) {
                         const remaining = data.filter(d => !sampledData.includes(d));
                         const shuffled = d3.shuffle([...remaining]);
@@ -729,16 +720,16 @@
                 }
             });
             
-            // 연도순 정렬
+            
             processedData.sort((a, b) => a.year - b.year);
             
             console.log("처리된 시계열 데이터:", processedData.length, "개 연도");
             console.log("연도별 균등 샘플 수:", minCount, "개");
         }
 
-        // 영역 차트 생성
+
         function createAreaChart() {
-            // 기존 SVG 제거
+
             d3.select('#area-chart').selectAll('*').remove();
             
             const svg = d3.select('#area-chart')
@@ -751,7 +742,6 @@
             const g = svg.append('g')
                 .attr('transform', `translate(${margin.left}, ${margin.top})`);
             
-            // 스케일 설정
             const xScale = d3.scaleLinear()
                 .domain(d3.extent(processedData, d => d.year))
                 .range([0, width]);
@@ -760,7 +750,6 @@
                 .domain([0, d3.max(processedData, d => Math.max(d.squat, d.bench, d.deadlift)) * 1.1])
                 .range([height, 0]);
             
-            // 영역 생성기
             const areaSquat = d3.area()
                 .x(d => xScale(d.year))
                 .y0(height)
@@ -779,7 +768,6 @@
                 .y1(d => yScale(d.deadlift))
                 .curve(d3.curveMonotoneX);
             
-            // 선 생성기
             const lineSquat = d3.line()
                 .x(d => xScale(d.year))
                 .y(d => yScale(d.squat))
@@ -795,7 +783,6 @@
                 .y(d => yScale(d.deadlift))
                 .curve(d3.curveMonotoneX);
             
-            // 그리드 라인
             g.selectAll('.grid-line-x')
                 .data(xScale.ticks(10))
                 .enter()
@@ -816,7 +803,7 @@
                 .attr('y1', d => yScale(d))
                 .attr('y2', d => yScale(d));
             
-            // 영역 추가 (순서: 벤치프레스 → 데드리프트 → 스쿼트)
+
            
              g.append('path')
                 .datum(processedData)
@@ -838,7 +825,7 @@
                 .attr('fill', exerciseColors.bench)
                 .attr('opacity', 0.3);
             
-            // 선 추가 (같은 순서)
+      
             g.append('path')
                 .datum(processedData)
                 .attr('class', 'line bench-line')
@@ -863,7 +850,7 @@
                 .attr('stroke-width', 2)
                 .attr('fill', 'none');
             
-            // 축 추가
+
             g.append('g')
                 .attr('class', 'axis')
                 .attr('transform', `translate(0, ${height})`)
@@ -873,7 +860,7 @@
                 .attr('class', 'axis')
                 .call(d3.axisLeft(yScale));
             
-            // 축 레이블
+
             g.append('text')
                 .attr('class', 'axis-label')
                 .attr('x', width / 2)
@@ -889,7 +876,6 @@
                 .style('text-anchor', 'middle')
                 .text('평균 기록 (kg)');
             
-            // 마우스 오버 인터랙션을 위한 투명한 영역
             const bisect = d3.bisector(d => d.year).left;
             
             const focus = g.append('g')
@@ -959,17 +945,14 @@
                     }
                 });
             
-            // 차트 저장
             window.currentChart = { g, xScale, yScale, areaSquat, areaBench, areaDeadlift, lineSquat, lineBench, lineDeadlift };
         }
         
-        // 차트 업데이트
         function updateAreaChart() {
             if (!window.currentChart) return;
             
             const { g, xScale, yScale, areaSquat, areaBench, areaDeadlift, lineSquat, lineBench, lineDeadlift } = window.currentChart;
             
-            // 스케일 업데이트
             xScale.domain(d3.extent(processedData, d => d.year));
             yScale.domain([0, d3.max(processedData, d => Math.max(d.squat, d.bench, d.deadlift)) * 1.1]);
             
@@ -996,10 +979,7 @@
                 .attr('d', areaBench)
                 .attr('opacity', highlightedExercise === null || highlightedExercise === 'bench' ? 0.3 : 0.1);
             
-            // 선 업데이트 (같은 순서)
             
-            
-           
             
             g.select('.squat-line')
                 .datum(processedData)
@@ -1025,7 +1005,6 @@
                 .attr('stroke-width', highlightedExercise === null || highlightedExercise === 'bench' ? 2 : 1)
                 .attr('opacity', highlightedExercise === null || highlightedExercise === 'bench' ? 1 : 0.3);
             
-            // 축 업데이트
             g.select('.axis')
                 .transition()
                 .duration(750)
@@ -1039,7 +1018,6 @@
                 .call(d3.axisLeft(yScale));
         }
         
-        // 툴팁 표시
         function showTooltip(event, d) {
             const tooltip = d3.select('#tooltip');
             tooltip.style('display', 'block')
@@ -1066,17 +1044,15 @@
                 .style('top', (event.pageY - 15) + 'px');
         }
         
-        // 툴팁 숨기기
         function hideTooltip() {
             d3.select('#tooltip').style('display', 'none');
         }
         
-        // 시간 범위 업데이트
         function updateTimeRange() {
             const startYear = +document.getElementById('time-range-start').value;
             const endYear = +document.getElementById('time-range-end').value;
             
-            // 시작년도가 끝년도보다 크면 조정
+
             if (startYear >= endYear) {
                 if (document.activeElement.id === 'time-range-start') {
                     document.getElementById('time-range-end').value = startYear + 1;
@@ -1095,9 +1071,9 @@
             updateAreaChart();
         }
         
-        // 이벤트 리스너 설정
+
         function setupEventListeners() {
-            // 필터 변경
+ 
             document.querySelectorAll('input[name="sex"]').forEach(input => {
                 input.addEventListener('change', filterData);
             });
@@ -1105,16 +1081,14 @@
             document.getElementById('equipment-select').addEventListener('change', filterData);
             document.getElementById('weightclass-select').addEventListener('change', filterData);
             
-            // 시간 슬라이더
             document.getElementById('time-range-start').addEventListener('input', updateTimeRange);
             document.getElementById('time-range-end').addEventListener('input', updateTimeRange);
             
-            // 범례 클릭
+
             document.querySelectorAll('.legend-item').forEach(item => {
                 item.addEventListener('click', function() {
                     const exercise = this.dataset.exercise;
                     
-                    // 모든 범례 아이템 스타일 초기화
                     document.querySelectorAll('.legend-item').forEach(i => {
                         i.classList.remove('active');
                     });
@@ -1132,7 +1106,6 @@
                 });
             });
             
-            // 초기화 버튼
             document.getElementById('reset-btn').addEventListener('click', function() {
                 document.getElementById('sex-all').checked = true;
                 document.getElementById('equipment-select').value = 'all';
@@ -1141,7 +1114,6 @@
                 document.getElementById('time-range-end').value = 2019;
                 highlightedExercise = null;
                 
-                // 범례 스타일 초기화
                 document.querySelectorAll('.legend-item').forEach(i => {
                     i.classList.remove('active');
                 });
@@ -1151,13 +1123,11 @@
             });
         }
         
-        // 초기화
         function init() {
             console.log("Task 3 애플리케이션 초기화 중...");
             loadData();
         }
         
-        // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>

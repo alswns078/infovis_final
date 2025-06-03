@@ -552,19 +552,18 @@
     <div class="tooltip" id="tooltip" style="display: none;"></div>
 
     <script>
-        // 전역 변수
         let originalData = [];
         let filteredData = [];
         let currentEquipmentFilter = 'all';
         let highlightedEquipment = null;
         let loadStartTime = 0;
         
-        // 차트 설정
+
         const margin = {top: 50, right: 50, bottom: 50, left: 80};
         const width = 900 - margin.left - margin.right;
         const height = 500 - margin.top - margin.bottom;
         
-        // 평행 좌표에 사용할 변수들
+     
         const dimensions = [
             {key: 'BodyweightKg', name: '체중 (kg)', format: '.1f'},
             {key: 'Best3SquatKg', name: '스쿼트 (kg)', format: '.0f'},
@@ -572,8 +571,7 @@
             {key: 'Best3DeadliftKg', name: '데드리프트 (kg)', format: '.0f'},
             {key: 'Wilks', name: 'Wilks 점수', format: '.1f'}
         ];
-        
-        // 장비별 색상
+
         const equipmentColors = {
             'Raw': '#2196f3',
             'Wraps': '#4caf50',
@@ -581,14 +579,11 @@
             'Multi-ply': '#9c27b0'
         };
 
-        // CSV 데이터 로드
         function loadData() {
             loadStartTime = performance.now();
             
             d3.csv("openpowerlifting_used.csv").then(function(data) {
                 console.log("원본 데이터 로드 완료:", data.length, "개 레코드");
-                
-                // 데이터 전처리
                 originalData = data.filter(d => {
                     return d.Event === 'SBD' && 
                            d.BodyweightKg && !isNaN(+d.BodyweightKg) && +d.BodyweightKg > 0 &&
@@ -620,15 +615,14 @@
                     showError("유효한 데이터를 찾을 수 없습니다. CSV 파일을 확인해주세요.");
                     return;
                 }
-                
-                // 데이터 정보 업데이트
+              
                 updateDataInfo(originalData.length, loadTime);
                 
                 filteredData = [...originalData];
                 hideLoading();
                 createParallelCoordinates();
                 setupEventListeners();
-                filterData(); // 초기 필터링 적용
+                filterData();
                 
             }).catch(function(error) {
                 console.error("CSV 로드 오류:", error);
@@ -657,34 +651,32 @@
             document.getElementById('legend').style.display = 'block';
         }
 
-        // 데이터 필터링
         function filterData() {
             const selectedSex = document.querySelector('input[name="sex"]:checked').value;
             const sampleSize = document.getElementById('sample-size').value;
             
             console.log("필터링 시작:", {selectedSex, sampleSize, currentEquipmentFilter});
             
-            // 성별 및 장비 필터링
+           
             let filtered = originalData.filter(d => {
                 return (selectedSex === 'all' || d.Sex === selectedSex) &&
                        (currentEquipmentFilter === 'all' || d.Equipment === currentEquipmentFilter);
             });
             
             console.log("1차 필터링 후:", filtered.length, "개");
-            
-            // 샘플링 (성능 최적화)
+       
             if (sampleSize !== 'all' && filtered.length > +sampleSize) {
                 const targetSize = +sampleSize;
                 
-                // 대용량 데이터 처리 최적화
+             
                 if (filtered.length > 50000) {
-                    // 매우 큰 데이터의 경우 계층화 샘플링
+                    
                     console.log("대용량 데이터 계층화 샘플링 적용");
                     
-                    // Wilks 점수 기준으로 정렬
+
                     filtered.sort((a, b) => b.Wilks - a.Wilks);
                     
-                    // 상위 20% + 중간 60% + 하위 20% 비율로 샘플링
+     
                     const topCount = Math.floor(targetSize * 0.2);
                     const middleCount = Math.floor(targetSize * 0.6);
                     const bottomCount = targetSize - topCount - middleCount;
@@ -703,7 +695,6 @@
                     filtered = [...topSample, ...middleSample, ...bottomSample];
                     
                 } else {
-                    // 일반적인 경우 기존 방식 사용
                     filtered.sort((a, b) => b.Wilks - a.Wilks);
                     const topPerformers = filtered.slice(0, Math.floor(targetSize * 0.3));
                     const remaining = filtered.slice(Math.floor(targetSize * 0.3));
@@ -719,9 +710,8 @@
             updateParallelCoordinates();
         }
 
-        // 평행 좌표 그래프 생성
         function createParallelCoordinates() {
-            // 기존 차트 제거
+
             d3.select('#parallel-coords-chart').selectAll('*').remove();
             
             const svg = d3.select('#parallel-coords-chart')
@@ -733,8 +723,7 @@
             
             const g = svg.append('g')
                 .attr('transform', `translate(${margin.left}, ${margin.top})`);
-            
-            // 각 차원별 스케일 생성
+        
             const scales = {};
             const xScale = d3.scalePoint()
                 .domain(dimensions.map(d => d.key))
@@ -746,11 +735,9 @@
                     .range([height, 0]);
             });
             
-            // 축 그리기
             dimensions.forEach(dim => {
                 const x = xScale(dim.key);
                 
-                // 축 라인
                 g.append('line')
                     .attr('class', 'axis-line')
                     .attr('x1', x)
@@ -758,26 +745,22 @@
                     .attr('x2', x)
                     .attr('y2', height);
                 
-                // 축 레이블
                 g.append('text')
                     .attr('class', 'axis-label')
                     .attr('x', x)
                     .attr('y', -20)
                     .text(dim.name);
                 
-                // 축 눈금
                 g.append('g')
                     .attr('transform', `translate(${x}, 0)`)
                     .call(d3.axisLeft(scales[dim.key]).ticks(6).tickFormat(d3.format(dim.format)));
             });
             
-            // 라인 그룹 생성 (나중에 업데이트용)
             g.append('g').attr('class', 'lines-group');
             
             updateParallelCoordinates();
         }
         
-        // 평행 좌표 업데이트
         function updateParallelCoordinates() {
             const updateStart = performance.now();
             
@@ -795,12 +778,10 @@
                     .range([height, 0]);
             });
             
-            // 라인 함수
             const line = d3.line()
                 .x(d => xScale(d.dimension))
                 .y(d => scales[d.dimension](d.value));
             
-            // 데이터를 라인 형태로 변환
             const lineData = filteredData.map(d => ({
                 data: d,
                 values: dimensions.map(dim => ({
@@ -809,10 +790,8 @@
                 }))
             }));
             
-            // 대용량 데이터 처리 최적화
             const isLargeDataset = lineData.length > 2000;
             
-            // 라인 업데이트
             const lines = linesGroup.selectAll('.line')
                 .data(lineData, d => d.data.Name + '_' + d.data.Equipment);
             
@@ -836,7 +815,6 @@
                     return d.data.Equipment === highlightedEquipment ? 2.5 : 1;
                 });
             
-            // 대용량 데이터일 때는 호버 이벤트 최적화
             if (!isLargeDataset) {
                 allLines
                     .on('mouseover', function(event, d) {
@@ -852,7 +830,6 @@
                         d3.select(this).attr('stroke-width', defaultWidth).attr('opacity', defaultOpacity);
                     });
             } else {
-                // 대용량 데이터일 때는 샘플링된 라인에만 호버 적용
                 allLines.filter((d, i) => i % Math.ceil(lineData.length / 500) === 0)
                     .on('mouseover', function(event, d) {
                         showTooltip(event, d.data);
@@ -872,7 +849,6 @@
             console.log(`차트 업데이트 완료: ${lineData.length}개 라인, ${updateTime}초`);
         }
         
-        // 툴팁 표시
         function showTooltip(event, d) {
             const tooltip = d3.select('#tooltip');
             tooltip.style('display', 'block')
@@ -915,15 +891,13 @@
             d3.select('#tooltip').style('display', 'none');
         }
         
-        // 이벤트 리스너 설정
         function setupEventListeners() {
-            // 장비 버튼 클릭
+
             document.querySelectorAll('.equipment-button').forEach(button => {
                 button.addEventListener('click', function() {
-                    // 기존 활성화 제거
+                   
                     document.querySelectorAll('.equipment-button').forEach(b => b.classList.remove('active'));
-                    
-                    // 새로운 활성화
+     
                     this.classList.add('active');
                     const equipment = this.dataset.equipment;
                     
@@ -939,26 +913,25 @@
                 });
             });
             
-            // 범례 클릭
             document.querySelectorAll('.legend-item').forEach(item => {
                 item.addEventListener('click', function() {
                     const equipment = this.dataset.equipment;
                     
                     if (highlightedEquipment === equipment) {
                         highlightedEquipment = null;
-                        // 모든 범례 아이템 스타일 초기화
+ 
                         document.querySelectorAll('.legend-item').forEach(i => {
                             i.style.backgroundColor = '';
                             i.style.transform = '';
                         });
                     } else {
                         highlightedEquipment = equipment;
-                        // 모든 범례 아이템 스타일 초기화
+            
                         document.querySelectorAll('.legend-item').forEach(i => {
                             i.style.backgroundColor = '';
                             i.style.transform = '';
                         });
-                        // 선택된 아이템 하이라이트
+        
                         this.style.backgroundColor = 'rgba(0,0,0,0.1)';
                         this.style.transform = 'scale(1.05)';
                     }
@@ -967,12 +940,10 @@
                 });
             });
             
-            // 성별 필터
             document.querySelectorAll('input[name="sex"]').forEach(input => {
                 input.addEventListener('change', filterData);
             });
             
-            // 샘플 크기
             document.getElementById('sample-size').addEventListener('change', function() {
                 const sampleSize = this.value;
                 console.log("샘플 크기 변경:", sampleSize);
@@ -982,20 +953,17 @@
                 filterData();
             });
             
-            // 초기화 버튼
             document.getElementById('reset-btn').addEventListener('click', function() {
                 document.getElementById('sex-all').checked = true;
                 document.getElementById('sample-size').value = '500';
                 currentEquipmentFilter = 'all';
                 highlightedEquipment = null;
-                
-                // 장비 버튼 초기화
+
                 document.querySelectorAll('.equipment-button').forEach(b => {
                     b.classList.remove('active');
                 });
                 document.querySelector('[data-equipment="all"]').classList.add('active');
-                
-                // 범례 스타일 초기화
+
                 document.querySelectorAll('.legend-item').forEach(i => {
                     i.style.backgroundColor = '';
                     i.style.transform = '';
@@ -1003,18 +971,16 @@
                 
                 filterData();
             });
-            
-            // 초기 상태 설정
+
             document.querySelector('[data-equipment="all"]').classList.add('active');
         }
-        
-        // 초기화
+
         function init() {
             console.log("Task 2 애플리케이션 초기화 중...");
             loadData();
         }
         
-        // 페이지 로드 시 초기화
+
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>

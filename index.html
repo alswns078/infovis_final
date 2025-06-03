@@ -212,7 +212,6 @@
             }
         }
 
-        /* 로딩 애니메이션 */
         .task-card {
             animation: fadeInUp 0.6s ease forwards;
             opacity: 0;
@@ -233,15 +232,12 @@
 </head>
 <body>
     <div class="container">
-        <!-- 헤더 -->
         <div class="header">
             <h1>🏋️ Powerlifting Data Analysis</h1>
             <p>파워리프팅 데이터를 통한 종합적인 성능 분석 및 시각화 대시보드</p>
         </div>
 
-        <!-- 태스크 카드들 -->
         <div class="tasks-grid">
-            <!-- Task 1 -->
             <div class="task-card">
                 <div class="task-header">
                     <div class="task-number">Task 1</div>
@@ -253,7 +249,6 @@
                 </div>
             </div>
 
-            <!-- Task 2 -->
             <div class="task-card">
                 <div class="task-header">
                     <div class="task-number">Task 2</div>
@@ -265,7 +260,6 @@
                 </div>
             </div>
 
-            <!-- Task 3 -->
             <div class="task-card">
                 <div class="task-header">
                     <div class="task-number">Task 3</div>
@@ -279,16 +273,14 @@
         </div>
 
         
-        <!-- 푸터 -->
         <div class="footer">
             <p>© 2025 Powerlifting Data Analysis Dashboard | Built with ❤️ and D3.js</p>
         </div>
     </div>
 
     <script>
-        // 간단한 인터랙션 효과
         document.addEventListener('DOMContentLoaded', function() {
-            // 카드 호버 효과 개선
+
             const cards = document.querySelectorAll('.task-card');
             
             cards.forEach(card => {
@@ -301,12 +293,11 @@
                 });
             });
 
-            // 버튼 클릭 효과
             const buttons = document.querySelectorAll('.task-button');
             
             buttons.forEach(button => {
                 button.addEventListener('click', function(e) {
-                    // 간단한 로딩 효과
+
                     const originalText = this.textContent;
                     this.textContent = '로딩 중...';
                     this.style.pointerEvents = 'none';
